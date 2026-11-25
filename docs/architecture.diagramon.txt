@@ -1,9 +1,14 @@
 # Comeback Thermometer architecture in Diagramon text format (https://github.com/dataengileb/diagramon).
+# The README diagram: which AWS services the project uses and where each one runs.
+# The order of the steps is in docs/pipeline.diagramon.txt, the data layers in docs/data-flow.diagramon.txt.
 # Readable source; docs/architecture.diagramon.json is the same diagram with its layout: open it in Diagramon
 # and use Export > PNG to refresh docs/architecture.png. Truth: infra/template.yaml.
 # Colors: "Neon on Black" (black #000000, boxes #141414, lines #5A5A5A, text #F2F2F2 / #A8A8A8,
 # neon cyan #00E5FF for the main data flow, pink #FF4FB0 for alerts). Before exporting, Diagramon's
 # black theme and Neon palette take these values and node borders are set to #5A5A5A.
+#
+# Step Functions has no arrow to each service it runs. Its node heads the "Daily run" group, and the
+# group holds every service the state machine calls, numbered in run order.
 
 title: Comeback Thermometer
 direction: LR
@@ -11,7 +16,7 @@ lines: elbow
 version: phase 3 of 3
 
 type flow: "Main data flow" color=#00E5FF width=3 particles=2
-type ctl: "Orchestration and access" color=#5A5A5A width=2 particles=0
+type ctl: "Start and access" color=#5A5A5A width=2 particles=0
 type alert: "Failure and cost alerts" dash="6 4" color=#FF4FB0 width=2 particles=1
 
 group ext "External APIs" color=#C9B8FF {
@@ -22,18 +27,20 @@ group ext "External APIs" color=#C9B8FF {
 
 group aws "AWS account · free tier" color=#FFC9A8 {
   sched: EventBridge Scheduler [aws/eventbridge] "daily 07:00 Mexico City"
-  sfn: Step Functions [aws/stepfunctions] "ingest · gold · export"
-  group ingest "Ingestion Lambdas · Python stdlib" color=#A8D8FF {
-    fyt: ingest_youtube [aws/lambda]
-    flfm: ingest_lastfm [aws/lambda]
-    fmb: ingest_musicbrainz [aws/lambda]
+  group run "Daily run · Step Functions calls everything in this box, in order" color=#FFE9A8 {
+    sfn: Step Functions [aws/stepfunctions] "state machine Pipeline"
+    group ingest "1 · Ingestion Lambdas in parallel · Python stdlib" color=#A8D8FF {
+      fyt: ingest_youtube [aws/lambda]
+      flfm: ingest_lastfm [aws/lambda]
+      fmb: ingest_musicbrainz [aws/lambda]
+    }
+    athena: Athena workgroup [aws/athena] "2 · MERGE · checks · VACUUM"
+    fexp: export_site [aws/lambda] "3 · dated site JSON"
   }
   ssm: SSM Parameter Store [aws/systemsmanager] "API keys · SecureString"
   s3: S3 data bucket [aws/s3] "bronze · silver · quarantine · gold · exports"
-  athena: Athena workgroup [aws/athena] "MERGE · checks · VACUUM"
   glue: Glue Data Catalog [aws/glue] "silver tables · projection"
-  gold: Gold Iceberg tables [aws/s3] "mv_launch · artist_daily"
-  fexp: export_site [aws/lambda] "dated site JSON"
+  gold: Gold Iceberg tables [aws/s3] "gold_video_launch · gold_artist_daily"
   sns: SNS alert topic [aws/sns] "failed run or check"
   budget: AWS Budgets [email] "alert on the first cent"
 }
@@ -46,9 +53,6 @@ group site "Static site · never calls AWS" color=#B5F2D0 {
 mail: Alert email [user] "maintainer"
 
 sched -> sfn : StartExecution style=ctl
-sfn -> fyt : style=ctl
-sfn -> flfm : style=ctl
-sfn -> fmb : style=ctl
 fyt -> ssm : style=ctl
 flfm -> ssm : style=ctl
 yt -> fyt : HTTPS style=flow
@@ -57,15 +61,13 @@ mb -> fmb : HTTPS style=flow
 fyt -> s3 : style=flow
 flfm -> s3 : style=flow
 fmb -> s3 : style=flow
-sfn -> athena : queries style=ctl
-athena -> glue : catalog style=ctl
 s3 -> athena : silver/ style=flow
+athena -> glue : catalog style=ctl
 athena -> gold : MERGE style=flow
-sfn -> fexp : style=ctl
 gold -> fexp : SELECT via Athena style=flow
 fexp -> s3 : exports/ style=flow
 s3 -> repo : fetch_export.sh style=flow
 repo -> pages : publish_site.sh style=flow
-sfn -> sns : Catch style=alert
+sfn -> sns : any failure style=alert
 sns -> mail : email style=alert
 budget -> mail : email style=alert

@@ -14,7 +14,7 @@
     },
     {
       "id": "ctl",
-      "label": "Orchestration and access",
+      "label": "Start and access",
       "color": "#5A5A5A",
       "width": 2,
       "particles": 0
@@ -43,10 +43,16 @@
       "color": "#FFC9A8"
     },
     {
-      "id": "ingest",
-      "label": "Ingestion Lambdas · Python stdlib",
-      "color": "#A8D8FF",
+      "id": "run",
+      "label": "Daily run · Step Functions calls everything in this box, in order",
+      "color": "#FFE9A8",
       "parent": "aws"
+    },
+    {
+      "id": "ingest",
+      "label": "1 · Ingestion Lambdas in parallel · Python stdlib",
+      "color": "#A8D8FF",
+      "parent": "run"
     },
     {
       "id": "site",
@@ -61,7 +67,7 @@
       "type": "web",
       "sub": "API key",
       "group": "ext",
-      "x": 1560,
+      "x": 1280,
       "y": 80
     },
     {
@@ -70,7 +76,7 @@
       "type": "web",
       "sub": "API key",
       "group": "ext",
-      "x": 1560,
+      "x": 1280,
       "y": 200
     },
     {
@@ -79,7 +85,7 @@
       "type": "web",
       "sub": "no key",
       "group": "ext",
-      "x": 1560,
+      "x": 1280,
       "y": 320
     },
     {
@@ -97,9 +103,9 @@
       "label": "Step Functions",
       "type": "events",
       "icon": "aws/stepfunctions",
-      "sub": "ingest · gold · export",
-      "group": "aws",
-      "x": 300,
+      "sub": "state machine Pipeline",
+      "group": "run",
+      "x": 320,
       "y": 200
     },
     {
@@ -108,7 +114,7 @@
       "type": "function",
       "icon": "aws/lambda",
       "group": "ingest",
-      "x": 620,
+      "x": 640,
       "y": 80
     },
     {
@@ -117,7 +123,7 @@
       "type": "function",
       "icon": "aws/lambda",
       "group": "ingest",
-      "x": 620,
+      "x": 640,
       "y": 200
     },
     {
@@ -126,8 +132,28 @@
       "type": "function",
       "icon": "aws/lambda",
       "group": "ingest",
-      "x": 620,
+      "x": 640,
       "y": 320
+    },
+    {
+      "id": "athena",
+      "label": "Athena workgroup",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "2 · MERGE · checks · VACUUM",
+      "group": "run",
+      "x": 640,
+      "y": 480
+    },
+    {
+      "id": "fexp",
+      "label": "export_site",
+      "type": "function",
+      "icon": "aws/lambda",
+      "sub": "3 · dated site JSON",
+      "group": "run",
+      "x": 640,
+      "y": 800
     },
     {
       "id": "ssm",
@@ -136,8 +162,8 @@
       "icon": "aws/systemsmanager",
       "sub": "API keys · SecureString",
       "group": "aws",
-      "x": 620,
-      "y": -60
+      "x": 640,
+      "y": -120
     },
     {
       "id": "s3",
@@ -146,18 +172,8 @@
       "icon": "aws/s3",
       "sub": "bronze · silver · quarantine · gold · exports",
       "group": "aws",
-      "x": 940,
+      "x": 960,
       "y": 480
-    },
-    {
-      "id": "athena",
-      "label": "Athena workgroup",
-      "type": "analytics",
-      "icon": "aws/athena",
-      "sub": "MERGE · checks · VACUUM",
-      "group": "aws",
-      "x": 940,
-      "y": 640
     },
     {
       "id": "glue",
@@ -166,28 +182,18 @@
       "icon": "aws/glue",
       "sub": "silver tables · projection",
       "group": "aws",
-      "x": 940,
-      "y": 800
+      "x": 960,
+      "y": 640
     },
     {
       "id": "gold",
       "label": "Gold Iceberg tables",
       "type": "storage",
       "icon": "aws/s3",
-      "sub": "mv_launch · artist_daily",
+      "sub": "gold_video_launch · gold_artist_daily",
       "group": "aws",
-      "x": 620,
-      "y": 640
-    },
-    {
-      "id": "fexp",
-      "label": "export_site",
-      "type": "function",
-      "icon": "aws/lambda",
-      "sub": "dated site JSON",
-      "group": "aws",
-      "x": 620,
-      "y": 480
+      "x": 960,
+      "y": 800
     },
     {
       "id": "sns",
@@ -196,8 +202,8 @@
       "icon": "aws/sns",
       "sub": "failed run or check",
       "group": "aws",
-      "x": 300,
-      "y": 400
+      "x": 320,
+      "y": 1000
     },
     {
       "id": "budget",
@@ -206,7 +212,7 @@
       "sub": "alert on the first cent",
       "group": "aws",
       "x": 0,
-      "y": 540
+      "y": 1000
     },
     {
       "id": "repo",
@@ -214,7 +220,7 @@
       "type": "storage",
       "sub": "latest.json + dated copy",
       "group": "site",
-      "x": 1260,
+      "x": 1280,
       "y": 480
     },
     {
@@ -223,7 +229,7 @@
       "type": "web",
       "sub": "gh-pages branch",
       "group": "site",
-      "x": 1560,
+      "x": 1600,
       "y": 480
     },
     {
@@ -231,8 +237,8 @@
       "label": "Alert email",
       "type": "user",
       "sub": "maintainer",
-      "x": 0,
-      "y": 800
+      "x": 160,
+      "y": 1200
     }
   ],
   "edges": [
@@ -245,151 +251,120 @@
     },
     {
       "id": "e2",
-      "from": "sfn",
-      "to": "fyt",
-      "style": "ctl"
-    },
-    {
-      "id": "e3",
-      "from": "sfn",
-      "to": "flfm",
-      "style": "ctl"
-    },
-    {
-      "id": "e4",
-      "from": "sfn",
-      "to": "fmb",
-      "style": "ctl"
-    },
-    {
-      "id": "e5",
       "from": "fyt",
       "to": "ssm",
       "style": "ctl"
     },
     {
-      "id": "e6",
+      "id": "e3",
       "from": "flfm",
       "to": "ssm",
       "style": "ctl"
     },
     {
-      "id": "e7",
+      "id": "e4",
       "from": "yt",
       "to": "fyt",
       "label": "HTTPS",
       "style": "flow"
     },
     {
-      "id": "e8",
+      "id": "e5",
       "from": "lfm",
       "to": "flfm",
       "label": "HTTPS",
       "style": "flow"
     },
     {
-      "id": "e9",
+      "id": "e6",
       "from": "mb",
       "to": "fmb",
       "label": "HTTPS",
       "style": "flow"
     },
     {
-      "id": "e10",
+      "id": "e7",
       "from": "fyt",
       "to": "s3",
       "style": "flow"
     },
     {
-      "id": "e11",
+      "id": "e8",
       "from": "flfm",
       "to": "s3",
       "style": "flow"
     },
     {
-      "id": "e12",
+      "id": "e9",
       "from": "fmb",
       "to": "s3",
       "style": "flow"
     },
     {
-      "id": "e13",
-      "from": "sfn",
-      "to": "athena",
-      "label": "queries",
-      "style": "ctl"
-    },
-    {
-      "id": "e14",
-      "from": "athena",
-      "to": "glue",
-      "label": "catalog",
-      "style": "ctl"
-    },
-    {
-      "id": "e15",
+      "id": "e10",
       "from": "s3",
       "to": "athena",
       "label": "silver/",
       "style": "flow"
     },
     {
-      "id": "e16",
+      "id": "e11",
+      "from": "athena",
+      "to": "glue",
+      "label": "catalog",
+      "style": "ctl"
+    },
+    {
+      "id": "e12",
       "from": "athena",
       "to": "gold",
       "label": "MERGE",
       "style": "flow"
     },
     {
-      "id": "e17",
-      "from": "sfn",
-      "to": "fexp",
-      "style": "ctl"
-    },
-    {
-      "id": "e18",
+      "id": "e13",
       "from": "gold",
       "to": "fexp",
       "label": "SELECT via Athena",
       "style": "flow"
     },
     {
-      "id": "e19",
+      "id": "e14",
       "from": "fexp",
       "to": "s3",
       "label": "exports/",
       "style": "flow"
     },
     {
-      "id": "e20",
+      "id": "e15",
       "from": "s3",
       "to": "repo",
       "label": "fetch_export.sh",
       "style": "flow"
     },
     {
-      "id": "e21",
+      "id": "e16",
       "from": "repo",
       "to": "pages",
       "label": "publish_site.sh",
       "style": "flow"
     },
     {
-      "id": "e22",
+      "id": "e17",
       "from": "sfn",
       "to": "sns",
-      "label": "Catch",
+      "label": "any failure",
       "style": "alert"
     },
     {
-      "id": "e23",
+      "id": "e18",
       "from": "sns",
       "to": "mail",
       "label": "email",
       "style": "alert"
     },
     {
-      "id": "e24",
+      "id": "e19",
       "from": "budget",
       "to": "mail",
       "label": "email",
