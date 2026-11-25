@@ -216,7 +216,9 @@ Resources:
         MusicBrainzFn: !GetAtt IngestMusicBrainz.Arn
         AlertTopic: !Ref AlertTopic
       Definition:
-        Comment: Daily snapshot. A re-run on the same UTC day overwrites that day; past days cannot be re-taken.
+        Comment: >-
+          Daily snapshot. A re-run on the same UTC day overwrites that day; past days cannot be re-taken.
+          Each source catches its own failure, so one broken API never cancels the other two.
         QueryLanguage: JSONata
         StartAt: Ingest
         States:
@@ -237,6 +239,13 @@ Resources:
                         IntervalSeconds: 30
                         MaxAttempts: 2
                         BackoffRate: 2
+                    Catch:
+                      - ErrorEquals: [States.ALL]
+                        Output: "{% {'source': 'youtube', 'failed': true, 'error': $states.errorOutput} %}"
+                        Next: YouTubeFailed
+                    End: true
+                  YouTubeFailed:
+                    Type: Pass
                     End: true
               - StartAt: Lastfm
                 States:
@@ -250,6 +259,13 @@ Resources:
                         IntervalSeconds: 30
                         MaxAttempts: 2
                         BackoffRate: 2
+                    Catch:
+                      - ErrorEquals: [States.ALL]
+                        Output: "{% {'source': 'lastfm', 'failed': true, 'error': $states.errorOutput} %}"
+                        Next: LastfmFailed
+                    End: true
+                  LastfmFailed:
+                    Type: Pass
                     End: true
               - StartAt: MusicBrainz
                 States:
@@ -263,12 +279,25 @@ Resources:
                         IntervalSeconds: 30
                         MaxAttempts: 2
                         BackoffRate: 2
+                    Catch:
+                      - ErrorEquals: [States.ALL]
+                        Output: "{% {'source': 'musicbrainz', 'failed': true, 'error': $states.errorOutput} %}"
+                        Next: MusicBrainzFailed
+                    End: true
+                  MusicBrainzFailed:
+                    Type: Pass
                     End: true
             Catch:
               - ErrorEquals: [States.ALL]
                 Next: NotifyFailure
                 Output: "{% $states.errorOutput %}"
-            Next: Done
+            Next: CheckSources
+          CheckSources:
+            Type: Choice
+            Choices:
+              - Condition: "{% $exists($states.input.failed) %}"
+                Next: NotifyFailure
+            Default: Done
           NotifyFailure:
             Type: Task
             Resource: arn:aws:states:::sns:publish
