@@ -144,7 +144,7 @@
       "label": "S3 data bucket",
       "type": "storage",
       "icon": "aws/s3",
-      "sub": "raw · validated · exports",
+      "sub": "bronze · silver · quarantine · gold · exports",
       "group": "aws",
       "x": 940,
       "y": 480
@@ -330,7 +330,7 @@
       "id": "e15",
       "from": "s3",
       "to": "athena",
-      "label": "validated/",
+      "label": "silver/",
       "style": "flow"
     },
     {

@@ -33,7 +33,7 @@ def snapshot_date(event: dict) -> str:
 
 
 def publish(table: str, contract: str, records: list[dict], day: str) -> dict:
-    """Quarantine is always written so a failed run can be diagnosed. Validated is written
+    """Quarantine is always written so a failed run can be diagnosed. Silver is written
     only when the gate passes, so downstream never reads a day that failed."""
     valid, invalid = contracts.split_valid(records, contracts.load_contract(contract))
     storage.put_jsonl(storage.table_key("quarantine", table, day), invalid)
@@ -46,5 +46,5 @@ def publish(table: str, contract: str, records: list[dict], day: str) -> dict:
         raise QualityGateError(f"{table}: source returned no records")
     if len(invalid) / total > max_ratio:
         raise QualityGateError(f"{table}: {len(invalid)}/{total} records broke the contract")
-    storage.put_jsonl(storage.table_key("validated", table, day), valid)
+    storage.put_jsonl(storage.table_key("silver", table, day), valid)
     return summary

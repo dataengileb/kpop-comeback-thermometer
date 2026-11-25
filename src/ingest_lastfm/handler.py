@@ -70,8 +70,8 @@ def lambda_handler(event, context):
             not_found.append(artist["slug"])
             continue
         top = _call("artist.gettoptracks", artist["lastfm_name"], key, limit=50)
-        storage.put_json(storage.raw_key("lastfm", day, f"artist_{artist['slug']}"), info)
-        storage.put_json(storage.raw_key("lastfm", day, f"toptracks_{artist['slug']}"), top)
+        storage.put_json(storage.bronze_key("lastfm", day, f"artist_{artist['slug']}"), info)
+        storage.put_json(storage.bronze_key("lastfm", day, f"toptracks_{artist['slug']}"), top)
         artists.append(artist_record(info, artist["slug"], day))
         tracks.extend(track_records(top, artist["slug"], day))
     return {

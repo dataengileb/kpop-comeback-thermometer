@@ -6,7 +6,7 @@
 The RFP asks for views at day 1, 7 and 28 per music video, ranked within the same artist and market. That needs every daily snapshot of a video at once, and re-running a day must give the same numbers. The pipeline may only use AWS services, with no dbt or DuckDB.
 
 ## Decision
-- **Silver:** Glue tables over `validated/`. Partition projection on `snapshot_date` means no crawler and no `MSCK REPAIR`.
+- **Silver:** Glue tables over `silver/`. Partition projection on `snapshot_date` means no crawler and no `MSCK REPAIR`.
 - **Gold:** two Iceberg tables created by CloudFormation: `gold_video_launch` (one row per video) and `gold_artist_daily` (Last.fm per artist and day).
 - **Daily build:** after ingestion, Step Functions runs one Athena `MERGE` per table. Each `MERGE` recomputes from all of silver and updates by key. It is followed by data checks (a failed check emails the alert) and a `VACUUM` that expires old Iceberg snapshots.
 - **Definitions** in `gold_video_launch`:

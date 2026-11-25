@@ -106,8 +106,8 @@ Resources:
               - Effect: Allow
                 Action: s3:PutObject
                 Resource:
-                  - !Sub ${DataBucket.Arn}/raw/*
-                  - !Sub ${DataBucket.Arn}/validated/*
+                  - !Sub ${DataBucket.Arn}/bronze/*
+                  - !Sub ${DataBucket.Arn}/silver/*
                   - !Sub ${DataBucket.Arn}/quarantine/*
               - Effect: Allow
                 Action: ssm:GetParameter
@@ -188,14 +188,14 @@ Resources:
           DATA_BUCKET: !Ref DataBucket
           MAX_INVALID_RATIO: !Ref MaxInvalidRatio
 
-  # ---------- Catalog: silver over validated/, gold as Iceberg (docs/adr/0004) ----------
+  # ---------- Catalog: silver tables over silver/, gold as Iceberg (docs/adr/0004) ----------
   Catalog:
     Type: AWS::Glue::Database
     Properties:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
         Name: !Join ["_", !Split ["-", !Ref AWS::StackName]]
-        Description: Silver tables over validated/ and gold Iceberg tables rebuilt by the daily run.
+        Description: Silver tables over silver/ and gold Iceberg tables rebuilt by the daily run.
 
   SilverYouTube:
     Type: AWS::Glue::Table
@@ -214,9 +214,9 @@ Resources:
           projection.snapshot_date.range: 2026-11-01,NOW
           projection.snapshot_date.interval: "1"
           projection.snapshot_date.interval.unit: DAYS
-          storage.location.template: !Sub s3://${DataBucket}/validated/youtube_video_stats/snapshot_date=${!snapshot_date}/
+          storage.location.template: !Sub s3://${DataBucket}/silver/youtube_video_stats/snapshot_date=${!snapshot_date}/
         StorageDescriptor:
-          Location: !Sub s3://${DataBucket}/validated/youtube_video_stats/
+          Location: !Sub s3://${DataBucket}/silver/youtube_video_stats/
           InputFormat: org.apache.hadoop.mapred.TextInputFormat
           OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
           SerdeInfo: {SerializationLibrary: org.openx.data.jsonserde.JsonSerDe}
@@ -249,9 +249,9 @@ Resources:
           projection.snapshot_date.range: 2026-11-01,NOW
           projection.snapshot_date.interval: "1"
           projection.snapshot_date.interval.unit: DAYS
-          storage.location.template: !Sub s3://${DataBucket}/validated/lastfm_artist_stats/snapshot_date=${!snapshot_date}/
+          storage.location.template: !Sub s3://${DataBucket}/silver/lastfm_artist_stats/snapshot_date=${!snapshot_date}/
         StorageDescriptor:
-          Location: !Sub s3://${DataBucket}/validated/lastfm_artist_stats/
+          Location: !Sub s3://${DataBucket}/silver/lastfm_artist_stats/
           InputFormat: org.apache.hadoop.mapred.TextInputFormat
           OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
           SerdeInfo: {SerializationLibrary: org.openx.data.jsonserde.JsonSerDe}
@@ -441,7 +441,7 @@ Resources:
               - Effect: Allow
                 Action: s3:GetObject
                 Resource:
-                  - !Sub ${DataBucket.Arn}/validated/*
+                  - !Sub ${DataBucket.Arn}/silver/*
                   - !Sub ${DataBucket.Arn}/gold/*
                   - !Sub ${DataBucket.Arn}/athena-results/*
               - Effect: Allow

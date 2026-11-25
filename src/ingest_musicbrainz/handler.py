@@ -50,6 +50,6 @@ def lambda_handler(event, context):
     for artist in load_artists():
         # MBIDs are pinned in the config: names like NAYEON or TWICE are shared by other artists.
         pages = browse_release_groups(artist["musicbrainz_id"])
-        storage.put_json(storage.raw_key("musicbrainz", day, f"release_groups_{artist['slug']}"), pages)
+        storage.put_json(storage.bronze_key("musicbrainz", day, f"release_groups_{artist['slug']}"), pages)
         records.extend(to_records(pages, artist["slug"], day))
     return publish("musicbrainz_release", "musicbrainz_release", records, day)

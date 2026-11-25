@@ -147,8 +147,8 @@ def lambda_handler(event, context):
         playlist_id, payload = uploads_playlist(handle, key)
         pages = list_uploads(playlist_id, key, earliest)
         name = handle.lstrip("@").lower()
-        storage.put_json(storage.raw_key("youtube", day, f"channel_{name}"), payload)
-        storage.put_json(storage.raw_key("youtube", day, f"uploads_{name}"), pages)
+        storage.put_json(storage.bronze_key("youtube", day, f"channel_{name}"), payload)
+        storage.put_json(storage.bronze_key("youtube", day, f"uploads_{name}"), pages)
         matches.update(match_videos(pages, artists, channel["market"], config["video_types"], config["artists"]))
 
     ids = sorted(matches)
@@ -156,5 +156,5 @@ def lambda_handler(event, context):
         get_json(f"{API}/videos", {"part": "snippet,statistics", "id": ",".join(ids[i:i + 50]), "key": key})
         for i in range(0, len(ids), 50)
     ]
-    storage.put_json(storage.raw_key("youtube", day, "videos"), video_pages)
+    storage.put_json(storage.bronze_key("youtube", day, "videos"), video_pages)
     return publish("youtube_video_stats", "youtube_video_stats", to_records(video_pages, matches, day), day)
