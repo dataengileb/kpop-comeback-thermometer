@@ -1,0 +1,320 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Comeback Thermometer - daily batch snapshot of K-pop comeback metrics
+  (YouTube, Last.fm, MusicBrainz). Free-tier only.
+
+Parameters:
+  AlertEmail:
+    Type: String
+    Description: Receives pipeline failures and the budget alert. Confirm the SNS email after deploying.
+  YouTubeKeyParam:
+    Type: String
+    Default: /comeback-thermometer/youtube-api-key
+    Description: SSM SecureString holding the YouTube Data API key (created by hand, see README).
+  LastfmKeyParam:
+    Type: String
+    Default: /comeback-thermometer/lastfm-api-key
+    Description: SSM SecureString holding the Last.fm API key (created by hand, see README).
+  ScheduleExpression:
+    Type: String
+    Default: cron(0 7 * * ? *)
+    Description: When the daily snapshot runs, in America/Mexico_City time.
+  MaxInvalidRatio:
+    Type: Number
+    Default: 0.05
+    Description: Share of records allowed to break a contract before the run stops.
+  EarliestMvDate:
+    Type: String
+    Default: "2015-10-01"
+    Description: Music videos older than this are ignored (TWICE debuted in October 2015).
+
+Resources:
+  # ---------- Storage ----------
+  DataBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-data-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+
+  # ---------- Alerts and cost guard ----------
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlertEmail
+
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub ${AWS::StackName}-zero-spend
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: 1
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 1 # percent of 1 USD: alert on the first cent
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+  # ---------- Ingestion ----------
+  IngestRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ingest
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  - !Sub ${DataBucket.Arn}/raw/*
+                  - !Sub ${DataBucket.Arn}/validated/*
+                  - !Sub ${DataBucket.Arn}/quarantine/*
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${YouTubeKeyParam}
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LastfmKeyParam}
+
+  YouTubeLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-ingest-youtube
+      RetentionInDays: 14
+  LastfmLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-ingest-lastfm
+      RetentionInDays: 14
+  MusicBrainzLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-ingest-musicbrainz
+      RetentionInDays: 14
+
+  IngestYouTube:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-ingest-youtube
+      Runtime: python3.14
+      Architectures: [arm64]
+      Handler: ingest_youtube.handler.lambda_handler
+      Code: ../src
+      Role: !GetAtt IngestRole.Arn
+      MemorySize: 256
+      Timeout: 300
+      LoggingConfig:
+        LogGroup: !Ref YouTubeLogs
+      Environment:
+        Variables:
+          DATA_BUCKET: !Ref DataBucket
+          YOUTUBE_KEY_PARAM: !Ref YouTubeKeyParam
+          MAX_INVALID_RATIO: !Ref MaxInvalidRatio
+          EARLIEST_MV_DATE: !Ref EarliestMvDate
+
+  IngestLastfm:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-ingest-lastfm
+      Runtime: python3.14
+      Architectures: [arm64]
+      Handler: ingest_lastfm.handler.lambda_handler
+      Code: ../src
+      Role: !GetAtt IngestRole.Arn
+      MemorySize: 256
+      Timeout: 120
+      LoggingConfig:
+        LogGroup: !Ref LastfmLogs
+      Environment:
+        Variables:
+          DATA_BUCKET: !Ref DataBucket
+          LASTFM_KEY_PARAM: !Ref LastfmKeyParam
+          MAX_INVALID_RATIO: !Ref MaxInvalidRatio
+
+  IngestMusicBrainz:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-ingest-musicbrainz
+      Runtime: python3.14
+      Architectures: [arm64]
+      Handler: ingest_musicbrainz.handler.lambda_handler
+      Code: ../src
+      Role: !GetAtt IngestRole.Arn
+      MemorySize: 256
+      Timeout: 300
+      LoggingConfig:
+        LogGroup: !Ref MusicBrainzLogs
+      Environment:
+        Variables:
+          DATA_BUCKET: !Ref DataBucket
+          MAX_INVALID_RATIO: !Ref MaxInvalidRatio
+
+  # ---------- Orchestration ----------
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: states.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: pipeline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !GetAtt IngestYouTube.Arn
+                  - !GetAtt IngestLastfm.Arn
+                  - !GetAtt IngestMusicBrainz.Arn
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref AlertTopic
+
+  Pipeline:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${AWS::StackName}-daily
+      StateMachineType: STANDARD
+      RoleArn: !GetAtt PipelineRole.Arn
+      DefinitionSubstitutions:
+        YouTubeFn: !GetAtt IngestYouTube.Arn
+        LastfmFn: !GetAtt IngestLastfm.Arn
+        MusicBrainzFn: !GetAtt IngestMusicBrainz.Arn
+        AlertTopic: !Ref AlertTopic
+      Definition:
+        Comment: Daily snapshot. A re-run with {"snapshot_date":"YYYY-MM-DD"} overwrites that day.
+        QueryLanguage: JSONata
+        StartAt: Ingest
+        States:
+          Ingest:
+            Type: Parallel
+            Arguments:
+              snapshot_date: >-
+                {% $exists($states.input.snapshot_date) ? $states.input.snapshot_date
+                   : $substring($states.context.Execution.StartTime, 0, 10) %}
+            Branches:
+              - StartAt: YouTube
+                States:
+                  YouTube:
+                    Type: Task
+                    Resource: arn:aws:states:::lambda:invoke
+                    Arguments: {FunctionName: "${YouTubeFn}", Payload: "{% $states.input %}"}
+                    Output: "{% $states.result.Payload %}"
+                    Retry:
+                      - ErrorEquals: [Lambda.ServiceException, Lambda.TooManyRequestsException, States.Timeout]
+                        IntervalSeconds: 30
+                        MaxAttempts: 2
+                        BackoffRate: 2
+                    End: true
+              - StartAt: Lastfm
+                States:
+                  Lastfm:
+                    Type: Task
+                    Resource: arn:aws:states:::lambda:invoke
+                    Arguments: {FunctionName: "${LastfmFn}", Payload: "{% $states.input %}"}
+                    Output: "{% $states.result.Payload %}"
+                    Retry:
+                      - ErrorEquals: [Lambda.ServiceException, Lambda.TooManyRequestsException, States.Timeout]
+                        IntervalSeconds: 30
+                        MaxAttempts: 2
+                        BackoffRate: 2
+                    End: true
+              - StartAt: MusicBrainz
+                States:
+                  MusicBrainz:
+                    Type: Task
+                    Resource: arn:aws:states:::lambda:invoke
+                    Arguments: {FunctionName: "${MusicBrainzFn}", Payload: "{% $states.input %}"}
+                    Output: "{% $states.result.Payload %}"
+                    Retry:
+                      - ErrorEquals: [Lambda.ServiceException, Lambda.TooManyRequestsException, States.Timeout]
+                        IntervalSeconds: 30
+                        MaxAttempts: 2
+                        BackoffRate: 2
+                    End: true
+            Catch:
+              - ErrorEquals: [States.ALL]
+                Next: NotifyFailure
+                Output: "{% $states.errorOutput %}"
+            Next: Done
+          NotifyFailure:
+            Type: Task
+            Resource: arn:aws:states:::sns:publish
+            Arguments:
+              TopicArn: "${AlertTopic}"
+              Subject: Comeback Thermometer run failed
+              Message: "{% $string($states.input) %}"
+            Next: Failed
+          Failed:
+            Type: Fail
+          Done:
+            Type: Succeed
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: scheduler.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: start-pipeline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource: !Ref Pipeline
+
+  DailySchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub ${AWS::StackName}-daily
+      ScheduleExpression: !Ref ScheduleExpression
+      ScheduleExpressionTimezone: America/Mexico_City
+      FlexibleTimeWindow: {Mode: "OFF"}
+      Target:
+        Arn: !Ref Pipeline
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: "{}"
+
+Outputs:
+  DataBucketName:
+    Value: !Ref DataBucket
+  PipelineArn:
+    Value: !Ref Pipeline

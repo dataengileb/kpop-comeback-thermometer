@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lastfm_artist_stats",
+  "description": "An artist's cumulative Last.fm listeners and scrobbles on a snapshot date. Source: artist.getInfo.",
+  "type": "object",
+  "required": ["snapshot_date", "group", "listeners", "playcount"],
+  "properties": {
+    "snapshot_date": {"type": "string", "format": "date"},
+    "group": {"type": "string", "enum": ["twice", "nmixx", "triples"]},
+    "artist_mbid": {"type": ["string", "null"]},
+    "listeners": {"type": "integer", "minimum": 0},
+    "playcount": {"type": "integer", "minimum": 0}
+  },
+  "additionalProperties": false
+}

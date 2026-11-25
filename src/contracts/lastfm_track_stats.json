@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lastfm_track_stats",
+  "description": "A track's cumulative Last.fm listeners and scrobbles on a snapshot date. Source: artist.getTopTracks.",
+  "type": "object",
+  "required": ["snapshot_date", "group", "track", "rank", "listeners", "playcount"],
+  "properties": {
+    "snapshot_date": {"type": "string", "format": "date"},
+    "group": {"type": "string", "enum": ["twice", "nmixx", "triples"]},
+    "track": {"type": "string", "minLength": 1},
+    "track_mbid": {"type": ["string", "null"]},
+    "rank": {"type": "integer", "minimum": 1},
+    "listeners": {"type": "integer", "minimum": 0},
+    "playcount": {"type": "integer", "minimum": 0}
+  },
+  "additionalProperties": false
+}

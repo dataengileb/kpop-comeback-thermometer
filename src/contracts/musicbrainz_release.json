@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "musicbrainz_release",
+  "description": "One release group (album, EP or single) with its first release date. Source: MusicBrainz release-group browse.",
+  "type": "object",
+  "required": ["snapshot_date", "group", "release_group_id", "title", "primary_type", "first_release_date"],
+  "properties": {
+    "snapshot_date": {"type": "string", "format": "date"},
+    "group": {"type": "string", "enum": ["twice", "nmixx", "triples"]},
+    "release_group_id": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
+    "title": {"type": "string", "minLength": 1},
+    "primary_type": {"type": "string", "enum": ["Album", "EP", "Single"]},
+    "secondary_types": {"type": "array"},
+    "first_release_date": {"type": "string", "format": "date"}
+  },
+  "additionalProperties": false
+}

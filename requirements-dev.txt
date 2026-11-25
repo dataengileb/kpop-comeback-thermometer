@@ -1,0 +1,4 @@
+# Local tooling only. The Lambdas use the Python runtime's built-in boto3 and the stdlib.
+boto3
+pytest
+cfn-lint

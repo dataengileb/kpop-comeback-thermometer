@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "youtube_video_stats",
+  "description": "One music video's cumulative counters on a snapshot date. Source: YouTube Data API v3 videos.list.",
+  "type": "object",
+  "required": ["snapshot_date", "group", "video_id", "title", "published_at", "view_count"],
+  "properties": {
+    "snapshot_date": {"type": "string", "format": "date"},
+    "group": {"type": "string", "enum": ["twice", "nmixx", "triples"]},
+    "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{11}$"},
+    "title": {"type": "string", "minLength": 1},
+    "published_at": {"type": "string", "format": "date-time"},
+    "view_count": {"type": "integer", "minimum": 0},
+    "like_count": {"type": ["integer", "null"], "minimum": 0},
+    "comment_count": {"type": ["integer", "null"], "minimum": 0}
+  },
+  "additionalProperties": false
+}
