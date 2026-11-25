@@ -83,6 +83,8 @@ const TEXT = {
     footer_data: "Built from a daily batch pipeline on AWS. This page only reads a dated JSON file.",
     footer_repo: "Source code",
     footer_sources: "Data:",
+    footer_youtube: "titles, views; each title links to its video",
+    lastfm_link: "{name} on Last.fm",
     switch_to: "Español",
     chart_timeline: "Release timeline chart",
     chart_curves: "Launch curves chart",
@@ -168,6 +170,8 @@ const TEXT = {
     footer_data: "Construido con un pipeline batch diario en AWS. Esta página solo lee un archivo JSON fechado.",
     footer_repo: "Código fuente",
     footer_sources: "Datos:",
+    footer_youtube: "títulos y vistas; cada título enlaza a su video",
+    lastfm_link: "{name} en Last.fm",
     switch_to: "English",
     chart_timeline: "Gráfica de cronología de lanzamientos",
     chart_curves: "Gráfica de curvas de lanzamiento",
@@ -390,12 +394,17 @@ function renderTables(videos) {
 
 function renderLastfm() {
   const box = document.getElementById("lastfm");
+  const linkLine = document.getElementById("lastfm-link");
+  linkLine.replaceChildren();
   const [kind, slug] = state.a.split(":");
   if (kind === "family") return box.replaceChildren(el("p", { class: "note" }, t("lastfm_family")));
   const row = state.data.lastfm.find((r) => r.artist === slug);
   if (!row) return box.replaceChildren(el("p", { class: "note" }, t("lastfm_none")));
   const card = (label, value, change) => el("div", {}, el("dt", {}, label), el("dd", {}, fmtNumber(value),
     change === null ? null : el("small", {}, t("change", { sign: change >= 0 ? "+" : "−", value: fmtNumber(Math.abs(change)) }))));
+  // Last.fm's API terms ask for a link back to its catalogue page for the artist.
+  const name = artistBySlug()[slug].name;
+  linkLine.append(el("a", { href: `https://www.last.fm/music/${encodeURIComponent(name)}`, rel: "noopener" }, t("lastfm_link", { name })));
   box.replaceChildren(card(t("listeners"), row.listeners, row.listeners_change), card(t("scrobbles"), row.playcount, row.playcount_change));
 }
 

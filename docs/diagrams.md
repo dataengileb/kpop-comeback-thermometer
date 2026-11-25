@@ -12,7 +12,7 @@ The README shows only the architecture diagram.
 
 ## Data flow
 
-![Data flow: the ingestion Lambdas pull from YouTube, Last.fm and MusicBrainz over HTTPS and check each record against its data contract. They write the untouched responses to raw/ (bronze), the records that pass to validated/ (silver) and the ones that fail to quarantine/, and more than 5% failures stops the run. Glue silver tables read validated/ in place, Athena MERGEs them into the gold/ Iceberg tables, and export_site reads gold and writes exports/. fetch_export.sh copies the export into site/data/ and publish_site.sh publishes it to GitHub Pages.](data-flow.png)
+![Data flow: the ingestion Lambdas pull from YouTube, Last.fm and MusicBrainz over HTTPS and check each record against its data contract. They write the untouched responses to bronze/, the records that pass to silver/ and the ones that fail to quarantine/, and more than 5% failures stops the run. Glue silver tables read silver/ in place, Athena MERGEs them into the gold/ Iceberg tables, and export_site reads gold and writes exports/. fetch_export.sh copies the export into site/data/ and publish_site.sh publishes it to GitHub Pages.](data-flow.png)
 
 ## Daily run
 

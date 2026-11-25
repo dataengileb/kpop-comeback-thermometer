@@ -157,3 +157,4 @@ td a:hover { color: var(--pastel-cielo); }
 }
 
 [hidden] { display: none !important; }
+.source-link { margin: var(--space-2) 0 0; }

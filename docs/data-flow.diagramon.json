@@ -79,8 +79,8 @@
       "y": 200
     },
     {
-      "id": "raw",
-      "label": "raw/",
+      "id": "bronze",
+      "label": "bronze/",
       "type": "storage",
       "icon": "aws/s3",
       "sub": "API responses, untouched",
@@ -90,8 +90,8 @@
       "layer": "bronze"
     },
     {
-      "id": "validated",
-      "label": "validated/",
+      "id": "silverfiles",
+      "label": "silver/",
       "type": "storage",
       "icon": "aws/s3",
       "sub": "passed the contract",
@@ -132,7 +132,7 @@
       "y": 720
     },
     {
-      "id": "silver",
+      "id": "silvertables",
       "label": "Silver tables",
       "type": "analytics",
       "icon": "aws/glue",
@@ -194,14 +194,14 @@
     {
       "id": "e4",
       "from": "ingest",
-      "to": "raw",
+      "to": "bronze",
       "label": "as returned",
       "style": "flow"
     },
     {
       "id": "e5",
       "from": "ingest",
-      "to": "validated",
+      "to": "silverfiles",
       "label": "passes",
       "style": "flow"
     },
@@ -214,14 +214,14 @@
     },
     {
       "id": "e7",
-      "from": "validated",
-      "to": "silver",
+      "from": "silverfiles",
+      "to": "silvertables",
       "label": "Glue catalog",
       "style": "flow"
     },
     {
       "id": "e8",
-      "from": "silver",
+      "from": "silvertables",
       "to": "gold",
       "label": "Athena MERGE",
       "style": "flow"

@@ -38,7 +38,7 @@ group aws "AWS account · free tier" color=#FFC9A8 {
     fexp: export_site [aws/lambda] "3 · dated site JSON"
   }
   ssm: SSM Parameter Store [aws/systemsmanager] "API keys · SecureString"
-  s3: S3 data bucket [aws/s3] "raw · validated · quarantine · exports"
+  s3: S3 data bucket [aws/s3] "bronze · silver · quarantine · gold · exports"
   glue: Glue Data Catalog [aws/glue] "silver tables · projection"
   gold: Gold Iceberg tables [aws/s3] "gold_video_launch · gold_artist_daily"
   sns: SNS alert topic [aws/sns] "failed run or check"
@@ -61,7 +61,7 @@ mb -> fmb : HTTPS style=flow
 fyt -> s3 : style=flow
 flfm -> s3 : style=flow
 fmb -> s3 : style=flow
-s3 -> athena : validated/ style=flow
+s3 -> athena : silver/ style=flow
 athena -> glue : catalog style=ctl
 athena -> gold : MERGE style=flow
 gold -> fexp : SELECT via Athena style=flow

@@ -1,5 +1,5 @@
 # Comeback Thermometer data flow in Diagramon text format (https://github.com/dataengileb/diagramon).
-# What happens to the data, layer by layer: bronze (raw/), silver (validated/), gold (Iceberg), then the site export.
+# What happens to the data, layer by layer: bronze/, silver/, gold/ (Iceberg), then the site export.
 # It leaves out who runs each step: see docs/architecture.diagramon.txt and docs/pipeline.diagramon.txt.
 # Readable source; docs/data-flow.diagramon.json holds the layout: open it in Diagramon and use
 # Export > PNG to refresh docs/data-flow.png. Truth: src/common/storage.py, src/common/run.py and infra/template.yaml.
@@ -22,14 +22,14 @@ group ext "External APIs" color=#C9B8FF {
 ingest: Ingestion Lambdas [aws/lambda] "check the data contracts"
 
 group bucket "S3 data bucket · one folder per snapshot_date" color=#FFC9A8 {
-  raw: raw/ [aws/s3] layer=bronze "API responses, untouched"
-  validated: validated/ [aws/s3] layer=silver "passed the contract"
+  bronze: bronze/ [aws/s3] layer=bronze "API responses, untouched"
+  silverfiles: silver/ [aws/s3] layer=silver "passed the contract"
   quarantine: quarantine/ [aws/s3] "failed, with the reasons"
   gold: gold/ · Iceberg [aws/s3] layer=gold "video_launch · artist_daily"
   exports: exports/ [aws/s3] "dated site.json + latest"
 }
 
-silver: Silver tables [aws/glue] layer=silver "YouTube · Last.fm"
+silvertables: Silver tables [aws/glue] layer=silver "YouTube · Last.fm"
 export: export_site [aws/lambda] "after the gold checks pass"
 
 group site "Static site · never calls AWS" color=#B5F2D0 {
@@ -40,11 +40,11 @@ group site "Static site · never calls AWS" color=#B5F2D0 {
 yt -> ingest : HTTPS style=flow
 lfm -> ingest : HTTPS style=flow
 mb -> ingest : HTTPS style=flow
-ingest -> raw : as returned style=flow
-ingest -> validated : passes style=flow
+ingest -> bronze : as returned style=flow
+ingest -> silverfiles : passes style=flow
 ingest -> quarantine : fails · over 5% stops the run style=reject
-validated -> silver : Glue catalog style=flow
-silver -> gold : Athena MERGE style=flow
+silverfiles -> silvertables : Glue catalog style=flow
+silvertables -> gold : Athena MERGE style=flow
 gold -> export : SELECT style=flow
 export -> exports : JSON style=flow
 exports -> repo : fetch_export.sh style=flow

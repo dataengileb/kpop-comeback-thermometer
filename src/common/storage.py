@@ -1,8 +1,9 @@
 """S3 layout. Every key is derived from (source, snapshot_date), so re-running the same day overwrites it.
 
-raw/        what the API returned, untouched (bronze)
-validated/  flattened records that passed the contract (silver input)
-quarantine/ records that failed the contract, with the reasons
+bronze/     what the API returned, untouched
+silver/     flattened records that passed their contract
+quarantine/ records that failed their contract, with the reasons
+gold/       Iceberg tables built from silver by Athena (see infra/template.yaml)
 """
 
 import json
@@ -20,8 +21,8 @@ def _client():
     return _s3
 
 
-def raw_key(source: str, snapshot_date: str, name: str) -> str:
-    return f"raw/source={source}/snapshot_date={snapshot_date}/{name}.json"
+def bronze_key(source: str, snapshot_date: str, name: str) -> str:
+    return f"bronze/source={source}/snapshot_date={snapshot_date}/{name}.json"
 
 
 def table_key(zone: str, table: str, snapshot_date: str) -> str:
