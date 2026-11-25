@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import pytest
 
 from common import run
@@ -34,5 +36,12 @@ def test_gate_stops_the_run_on_an_empty_source(written):
         run.publish("lastfm_artist_stats", "lastfm_artist_stats", [], "2026-11-24")
 
 
-def test_snapshot_date_comes_from_the_event():
-    assert run.snapshot_date({"snapshot_date": "2026-11-01"}) == "2026-11-01"
+def test_snapshot_date_is_today_in_utc():
+    today = datetime.now(timezone.utc).date().isoformat()
+    assert run.snapshot_date({}) == today
+    assert run.snapshot_date({"snapshot_date": today}) == today
+
+
+def test_a_past_snapshot_date_is_rejected():
+    with pytest.raises(ValueError, match="cannot be re-taken"):
+        run.snapshot_date({"snapshot_date": "2026-11-01"})

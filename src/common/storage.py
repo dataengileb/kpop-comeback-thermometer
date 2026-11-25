@@ -1,4 +1,4 @@
-"""S3 layout. Every key is derived from (source, snapshot_date), so re-running a day overwrites it.
+"""S3 layout. Every key is derived from (source, snapshot_date), so re-running the same day overwrites it.
 
 raw/        what the API returned, untouched (bronze)
 validated/  flattened records that passed the contract (silver input)

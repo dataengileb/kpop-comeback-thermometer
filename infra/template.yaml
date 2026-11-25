@@ -215,16 +215,14 @@ Resources:
         MusicBrainzFn: !GetAtt IngestMusicBrainz.Arn
         AlertTopic: !Ref AlertTopic
       Definition:
-        Comment: Daily snapshot. A re-run with {"snapshot_date":"YYYY-MM-DD"} overwrites that day.
+        Comment: Daily snapshot. A re-run on the same UTC day overwrites that day; past days cannot be re-taken.
         QueryLanguage: JSONata
         StartAt: Ingest
         States:
           Ingest:
             Type: Parallel
             Arguments:
-              snapshot_date: >-
-                {% $exists($states.input.snapshot_date) ? $states.input.snapshot_date
-                   : $substring($states.context.Execution.StartTime, 0, 10) %}
+              snapshot_date: "{% $substring($states.context.Execution.StartTime, 0, 10) %}"
             Branches:
               - StartAt: YouTube
                 States:

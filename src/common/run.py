@@ -19,11 +19,12 @@ def load_groups() -> list[dict]:
 
 
 def snapshot_date(event: dict) -> str:
-    """The run date comes from the scheduler so a re-run of a past day writes to that day."""
+    """Today's UTC date. The APIs only return current totals, so a past date would be mislabelled."""
+    today = datetime.now(timezone.utc).date()
     value = (event or {}).get("snapshot_date")
-    if value:
-        return date.fromisoformat(value).isoformat()
-    return datetime.now(timezone.utc).date().isoformat()
+    if value and date.fromisoformat(value) != today:
+        raise ValueError(f"snapshot_date {value} is not today ({today}); past days cannot be re-taken")
+    return today.isoformat()
 
 
 def publish(table: str, contract: str, records: list[dict], day: str) -> dict:
