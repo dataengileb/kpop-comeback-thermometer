@@ -1,0 +1,4 @@
+templates:
+  - infra/*.yaml
+ignore_checks:
+  - W3002 # Lambda code is uploaded by 'aws cloudformation package' (scripts/deploy.sh)

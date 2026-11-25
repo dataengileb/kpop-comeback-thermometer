@@ -1,0 +1,10 @@
+{
+  "nextPageToken": null,
+  "items": [
+    {"snippet": {"title": "TWICE \"THIS IS FOR\" M/V", "publishedAt": "2025-07-11T04:00:00Z", "resourceId": {"videoId": "aaaaaaaaaa1"}}},
+    {"snippet": {"title": "TWICE \"THIS IS FOR\" M/V Behind the Scenes", "publishedAt": "2025-07-12T09:00:00Z", "resourceId": {"videoId": "aaaaaaaaaa2"}}},
+    {"snippet": {"title": "NMIXX \"Blue Valentine\" M/V", "publishedAt": "2025-10-13T09:00:00Z", "resourceId": {"videoId": "bbbbbbbbbb1"}}},
+    {"snippet": {"title": "NMIXX \"Blue Valentine\" Dance Practice", "publishedAt": "2025-10-15T09:00:00Z", "resourceId": {"videoId": "bbbbbbbbbb2"}}},
+    {"snippet": {"title": "Stray Kids \"CEREMONY\" M/V", "publishedAt": "2025-08-22T04:00:00Z", "resourceId": {"videoId": "ccccccccc11"}}}
+  ]
+}
