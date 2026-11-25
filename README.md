@@ -37,6 +37,6 @@ unset KEY
 ALERT_EMAIL=you@example.com ./scripts/deploy.sh
 ```
 
-Confirm the SNS email. The first run happens at the next 07:00, or start it by hand with `aws stepfunctions start-execution --state-machine-arn <PipelineArn>`. To refresh the site, run `./scripts/fetch_export.sh`, commit `site/data/`, then run `./scripts/publish_site.sh`.
+Confirm the SNS email. The first run happens at the next 07:00, or start it by hand with `aws stepfunctions start-execution --state-machine-arn <PipelineArn>`. To refresh the site, run `./scripts/fetch_export.sh`, commit `site/data/`, then run `./scripts/publish_site.sh`. The site is refreshed every Monday, and every day during a launch's first week, so its data date is never more than a week old.
 
 Tests: `pip install -r requirements-dev.txt && pytest && cfn-lint`.
