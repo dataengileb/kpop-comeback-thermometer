@@ -60,8 +60,9 @@ Resources:
   MonthlyBudget:
     Type: AWS::Budgets::Budget
     Properties:
+      # No BudgetName: changing the subscribers replaces the budget, and a fixed name would
+      # make the new one collide with the old one (AlreadyExists) and roll the stack back.
       Budget:
-        BudgetName: !Sub ${AWS::StackName}-zero-spend
         BudgetType: COST
         TimeUnit: MONTHLY
         BudgetLimit:
