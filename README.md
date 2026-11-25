@@ -8,9 +8,9 @@ How strong was the start of each TWICE, NMIXX and tripleS comeback, Korean or Ja
 
 ## Architecture
 
-![Architecture: EventBridge Scheduler starts Step Functions, which runs three ingestion Lambdas in parallel; they read API keys from SSM, call YouTube, Last.fm and MusicBrainz, and write to S3. Failures go to SNS email. Athena gold and the GitHub Pages site are planned.](docs/architecture.png)
+![Architecture: EventBridge Scheduler starts Step Functions daily. It runs three ingestion Lambdas in parallel, which read API keys from SSM, call YouTube, Last.fm and MusicBrainz, and write to S3. Athena then MERGEs the validated data into two gold Iceberg tables through the Glue catalog, checks them and vacuums them. Failed runs or checks go to SNS email, and AWS Budgets alerts on the first cent. The dated export and the GitHub Pages site are planned.](docs/architecture.png)
 
-Drawn with [Diagramon](https://github.com/dataengileb/diagramon) from [its source](docs/architecture.diagramon.txt); dashed and grey parts are planned.
+Drawn with [Diagramon](https://github.com/dataengileb/diagramon) from [its source](docs/architecture.diagramon.txt); dashed and grey parts (phase 3) are planned.
 
 A modernization of [my 2023 version](https://github.com/Proggleb/youtube_data_engineering_project) (EC2 + RDS + Tableau). Why it changed: [ADR 1](docs/adr/0001-serverless-batch-instead-of-ec2-rds.md). Scope: [RFP](docs/rfp.md) and [SOW](docs/sow.md).
 
