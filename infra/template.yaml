@@ -220,6 +220,8 @@ Resources:
           Columns:
             - {Name: artist, Type: string}
             - {Name: market, Type: string}
+            - {Name: video_type, Type: string}
+            - {Name: compare_with, Type: string}
             - {Name: video_id, Type: string}
             - {Name: title, Type: string}
             - {Name: published_at, Type: string}
@@ -256,7 +258,7 @@ Resources:
             - {Name: listeners, Type: bigint}
             - {Name: playcount, Type: bigint}
 
-  GoldMvLaunch:
+  GoldVideoLaunch:
     Type: AWS::Glue::Table
     Properties:
       CatalogId: !Ref AWS::AccountId
@@ -266,14 +268,16 @@ Resources:
           MetadataOperation: CREATE
           Version: "2"
       TableInput:
-        Name: gold_mv_launch
+        Name: gold_video_launch
         TableType: EXTERNAL_TABLE
         StorageDescriptor:
-          Location: !Sub s3://${DataBucket}/gold/mv_launch/
+          Location: !Sub s3://${DataBucket}/gold/video_launch/
           Columns:
             - {Name: video_id, Type: string}
             - {Name: artist, Type: string}
             - {Name: market, Type: string}
+            - {Name: video_type, Type: string}
+            - {Name: compare_with, Type: string}
             - {Name: title, Type: string}
             - {Name: song_key, Type: string}
             - {Name: published_at, Type: timestamp}
@@ -541,8 +545,8 @@ Resources:
             Choices:
               - Condition: "{% $exists($states.input.failed) %}"
                 Next: NotifyFailure
-            Default: BuildMvLaunch
-          BuildMvLaunch:
+            Default: BuildVideoLaunch
+          BuildVideoLaunch:
             Type: Task
             Resource: arn:aws:states:::athena:startQueryExecution.sync
             Catch:
@@ -553,12 +557,14 @@ Resources:
               WorkGroup: "${WorkGroup}"
               QueryExecutionContext: {Database: "${Database}"}
               QueryString: |
-                -- One row per music video: views at day 1, 7 and 28 and the rank among the same
-                -- artist's comparable videos for the same market. Rebuilt from all of silver each run.
-                MERGE INTO gold_mv_launch AS t
+                -- One row per video: views at day 1, 7 and 28 and the rank among the same artist's
+                -- comparable videos for the same market and comparison group. Rebuilt from all of silver.
+                MERGE INTO gold_video_launch AS t
                 USING (
                   WITH aged AS (
                     SELECT video_id, artist, market, title, view_count, like_count, comment_count,
+                      -- Snapshots taken before video types existed are all music videos.
+                      coalesce(video_type, 'mv') AS video_type, coalesce(compare_with, 'release') AS compare_with,
                       CAST(from_iso8601_timestamp(published_at) AT TIME ZONE 'UTC' AS timestamp(6)) AS published_at,
                       date(snapshot_date) AS snapshot_date,
                       date_diff('day', date(from_iso8601_timestamp(published_at)), date(snapshot_date)) AS age_days
@@ -568,6 +574,8 @@ Resources:
                     SELECT video_id,
                       max_by(artist, snapshot_date) AS artist,
                       max_by(market, snapshot_date) AS market,
+                      max_by(video_type, snapshot_date) AS video_type,
+                      max_by(compare_with, snapshot_date) AS compare_with,
                       max_by(title, snapshot_date) AS title,
                       max(published_at) AS published_at,
                       min(snapshot_date) AS first_snapshot_date,
@@ -589,8 +597,8 @@ Resources:
                   ),
                   flagged AS (
                     SELECT *,
-                      -- The same song uploaded twice by the same artist for the same market: keep the most viewed.
-                      row_number() OVER (PARTITION BY artist, market, song_key ORDER BY views_latest DESC, video_id) > 1 AS is_duplicate,
+                      -- The same song uploaded twice as the same video type: keep the most viewed.
+                      row_number() OVER (PARTITION BY artist, market, video_type, song_key ORDER BY views_latest DESC, video_id) > 1 AS is_duplicate,
                       IF(comparable, d1) AS views_d1,
                       IF(comparable, d7) AS views_d7,
                       IF(comparable, d28) AS views_d28
@@ -600,27 +608,29 @@ Resources:
                       FROM videos
                     )
                   )
-                  SELECT video_id, artist, market, title, song_key, published_at,
+                  SELECT video_id, artist, market, video_type, compare_with, title, song_key, published_at,
                     first_snapshot_date, last_snapshot_date, views_latest, likes_latest, comments_latest,
                     comparable, is_duplicate, views_d1, views_d7, views_d28,
                     IF(views_d1 IS NOT NULL AND NOT is_duplicate,
-                       rank() OVER (PARTITION BY artist, market, views_d1 IS NOT NULL AND NOT is_duplicate ORDER BY views_d1 DESC)) AS rank_d1,
+                       rank() OVER (PARTITION BY artist, market, compare_with, views_d1 IS NOT NULL AND NOT is_duplicate ORDER BY views_d1 DESC)) AS rank_d1,
                     IF(views_d1 IS NOT NULL AND NOT is_duplicate,
-                       count(*) OVER (PARTITION BY artist, market, views_d1 IS NOT NULL AND NOT is_duplicate)) AS compared_d1,
+                       count(*) OVER (PARTITION BY artist, market, compare_with, views_d1 IS NOT NULL AND NOT is_duplicate)) AS compared_d1,
                     IF(views_d7 IS NOT NULL AND NOT is_duplicate,
-                       rank() OVER (PARTITION BY artist, market, views_d7 IS NOT NULL AND NOT is_duplicate ORDER BY views_d7 DESC)) AS rank_d7,
+                       rank() OVER (PARTITION BY artist, market, compare_with, views_d7 IS NOT NULL AND NOT is_duplicate ORDER BY views_d7 DESC)) AS rank_d7,
                     IF(views_d7 IS NOT NULL AND NOT is_duplicate,
-                       count(*) OVER (PARTITION BY artist, market, views_d7 IS NOT NULL AND NOT is_duplicate)) AS compared_d7,
+                       count(*) OVER (PARTITION BY artist, market, compare_with, views_d7 IS NOT NULL AND NOT is_duplicate)) AS compared_d7,
                     IF(views_d28 IS NOT NULL AND NOT is_duplicate,
-                       rank() OVER (PARTITION BY artist, market, views_d28 IS NOT NULL AND NOT is_duplicate ORDER BY views_d28 DESC)) AS rank_d28,
+                       rank() OVER (PARTITION BY artist, market, compare_with, views_d28 IS NOT NULL AND NOT is_duplicate ORDER BY views_d28 DESC)) AS rank_d28,
                     IF(views_d28 IS NOT NULL AND NOT is_duplicate,
-                       count(*) OVER (PARTITION BY artist, market, views_d28 IS NOT NULL AND NOT is_duplicate)) AS compared_d28
+                       count(*) OVER (PARTITION BY artist, market, compare_with, views_d28 IS NOT NULL AND NOT is_duplicate)) AS compared_d28
                   FROM flagged
                 ) AS s
                 ON t.video_id = s.video_id
                 WHEN MATCHED THEN UPDATE SET
                   artist = s.artist,
                   market = s.market,
+                  video_type = s.video_type,
+                  compare_with = s.compare_with,
                   title = s.title,
                   song_key = s.song_key,
                   published_at = s.published_at,
@@ -640,8 +650,8 @@ Resources:
                   compared_d1 = s.compared_d1,
                   compared_d7 = s.compared_d7,
                   compared_d28 = s.compared_d28
-                WHEN NOT MATCHED THEN INSERT (video_id, artist, market, title, song_key, published_at, first_snapshot_date, last_snapshot_date, views_latest, likes_latest, comments_latest, comparable, is_duplicate, views_d1, views_d7, views_d28, rank_d1, rank_d7, rank_d28, compared_d1, compared_d7, compared_d28)
-                VALUES (s.video_id, s.artist, s.market, s.title, s.song_key, s.published_at, s.first_snapshot_date, s.last_snapshot_date, s.views_latest, s.likes_latest, s.comments_latest, s.comparable, s.is_duplicate, s.views_d1, s.views_d7, s.views_d28, s.rank_d1, s.rank_d7, s.rank_d28, s.compared_d1, s.compared_d7, s.compared_d28)
+                WHEN NOT MATCHED THEN INSERT (video_id, artist, market, video_type, compare_with, title, song_key, published_at, first_snapshot_date, last_snapshot_date, views_latest, likes_latest, comments_latest, comparable, is_duplicate, views_d1, views_d7, views_d28, rank_d1, rank_d7, rank_d28, compared_d1, compared_d7, compared_d28)
+                VALUES (s.video_id, s.artist, s.market, s.video_type, s.compare_with, s.title, s.song_key, s.published_at, s.first_snapshot_date, s.last_snapshot_date, s.views_latest, s.likes_latest, s.comments_latest, s.comparable, s.is_duplicate, s.views_d1, s.views_d7, s.views_d28, s.rank_d1, s.rank_d7, s.rank_d28, s.compared_d1, s.compared_d7, s.compared_d28)
             Next: BuildArtistDaily
           BuildArtistDaily:
             Type: Task
@@ -683,16 +693,16 @@ Resources:
                 -- Data tests on gold. Each row returned is a failed check.
                 SELECT check_name, failures FROM (
                   SELECT 'one row per video' AS check_name, count(*) - count(DISTINCT video_id) AS failures
-                  FROM gold_mv_launch
+                  FROM gold_video_launch
                   UNION ALL
                   SELECT 'every silver video is in gold',
-                    (SELECT count(DISTINCT video_id) FROM silver_youtube_video_stats) - (SELECT count(*) FROM gold_mv_launch)
+                    (SELECT count(DISTINCT video_id) FROM silver_youtube_video_stats) - (SELECT count(*) FROM gold_video_launch)
                   UNION ALL
                   SELECT 'day-N values only for comparable videos', count(*)
-                  FROM gold_mv_launch WHERE NOT comparable AND coalesce(views_d1, views_d7, views_d28) IS NOT NULL
+                  FROM gold_video_launch WHERE NOT comparable AND coalesce(views_d1, views_d7, views_d28) IS NOT NULL
                   UNION ALL
                   SELECT 'only comparable originals are ranked', count(*)
-                  FROM gold_mv_launch WHERE coalesce(rank_d1, rank_d7, rank_d28) IS NOT NULL AND (NOT comparable OR is_duplicate)
+                  FROM gold_video_launch WHERE coalesce(rank_d1, rank_d7, rank_d28) IS NOT NULL AND (NOT comparable OR is_duplicate)
                   UNION ALL
                   SELECT 'one row per artist and day', count(*) - count(DISTINCT artist || '|' || CAST(snapshot_date AS varchar))
                   FROM gold_artist_daily
@@ -717,8 +727,8 @@ Resources:
               - Condition: "{% $count($states.input) > 1 %}"
                 Output: "{% {'gold_checks_failed': $states.input.Data.VarCharValue} %}"
                 Next: NotifyFailure
-            Default: VacuumMvLaunch
-          VacuumMvLaunch:
+            Default: VacuumVideoLaunch
+          VacuumVideoLaunch:
             Type: Task
             Resource: arn:aws:states:::athena:startQueryExecution.sync
             Catch:
@@ -729,7 +739,7 @@ Resources:
               WorkGroup: "${WorkGroup}"
               QueryExecutionContext: {Database: "${Database}"}
               # VACUUM expires old Iceberg snapshots. Athena rejects a comment before it.
-              QueryString: VACUUM gold_mv_launch
+              QueryString: VACUUM gold_video_launch
             Next: VacuumArtistDaily
           VacuumArtistDaily:
             Type: Task

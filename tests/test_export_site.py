@@ -30,7 +30,8 @@ def test_header_is_skipped_only_on_the_first_page():
 
 
 def _video(**overrides):
-    video = {"video_id": "aaaaaaaaaa1", "artist": "twice", "market": "kr", "title": 'TWICE "THIS IS FOR" M/V',
+    video = {"video_id": "aaaaaaaaaa1", "artist": "twice", "market": "kr", "video_type": "mv",
+             "compare_with": "release", "title": 'TWICE "THIS IS FOR" M/V',
              "published_at": "2025-07-11T04:00:00Z", "first_snapshot_date": "2026-11-25",
              "last_snapshot_date": "2026-11-25", "views_latest": 1, "comparable": False, "is_duplicate": False,
              "views_d1": None, "views_d7": None, "views_d28": None, "rank_d1": None, "rank_d7": None,

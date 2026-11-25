@@ -4,7 +4,7 @@
 
 ¿Qué tan fuerte arrancó cada comeback de TWICE, NMIXX y tripleS, sus unidades y solistas, comparado con los anteriores del mismo artista? YouTube solo muestra totales históricos, que siempre favorecen a los éxitos viejos. Este proyecto toma una foto diaria de los contadores para medir un lanzamiento al día 1, 7 y 28.
 
-**Sitio:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/?lang=es) · **Alcance:** [RFP](docs/rfp.md) y [SOW](docs/sow.md) · **Artistas y canales:** [`artists.json`](src/config/artists.json)
+**Sitio:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/?lang=es) · **Alcance:** [RFP](docs/rfp.md) y [SOW](docs/sow.md) · **Artistas y canales:** [`artists.json`](src/config/artists.json) · **Agregar artistas o métricas:** [extending.md](docs/extending.md)
 
 ## Cómo funciona
 
@@ -12,9 +12,9 @@
 2. Athena reconstruye dos tablas gold Iceberg con `MERGE` y corre pruebas de datos ([ADR 4](docs/adr/0004-gold-iceberg-tables-rebuilt-with-merge.md)).
 3. Una Lambda exporta gold a un archivo JSON fechado, que es lo que lee el sitio estático. El sitio nunca se conecta a AWS.
 
-![Arquitectura: EventBridge Scheduler inicia Step Functions cada día. Corre tres Lambdas de ingesta en paralelo, que leen las llaves de API de SSM, consultan YouTube, Last.fm y MusicBrainz, y escriben en S3. Después Athena hace MERGE de los datos validados en dos tablas Iceberg gold a través del catálogo de Glue, las revisa y las compacta con VACUUM. Las fallas de la corrida o de las revisiones llegan por correo vía SNS, y AWS Budgets avisa desde el primer centavo. El corte fechado y el sitio en GitHub Pages están planeados.](docs/architecture.png)
+![Arquitectura: EventBridge Scheduler inicia Step Functions cada día. Corre tres Lambdas de ingesta en paralelo, que leen las llaves de API de SSM, consultan YouTube, Last.fm y MusicBrainz, y escriben en S3. Después Athena hace MERGE de los datos validados en dos tablas Iceberg gold a través del catálogo de Glue, las revisa y las compacta con VACUUM. La Lambda export_site lee gold y escribe en S3 un corte fechado en JSON; fetch_export.sh lo copia a site/data/ y publish_site.sh publica el sitio en GitHub Pages, que nunca llama a AWS. Las fallas de la corrida o de las revisiones llegan por correo vía SNS, y AWS Budgets avisa desde el primer centavo.](docs/architecture.png)
 
-Dibujado con [Diagramon](https://github.com/dataengileb/diagramon) a partir de [su fuente](docs/architecture.diagramon.txt); lo punteado y gris (fase 3) está planeado.
+Dibujado con [Diagramon](https://github.com/dataengileb/diagramon) a partir de [su fuente](docs/architecture.diagramon.txt). El cian marca el flujo principal de datos y el rosa, las alertas.
 
 Es la modernización de [mi versión de 2023](https://github.com/Proggleb/youtube_data_engineering_project) (EC2 + RDS + Tableau). Por qué cambió: [ADR 1](docs/adr/0001-serverless-batch-instead-of-ec2-rds.md).
 
