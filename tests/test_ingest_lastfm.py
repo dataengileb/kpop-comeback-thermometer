@@ -4,7 +4,7 @@ from ingest_lastfm.handler import artist_record, track_records
 
 def test_artist_record_casts_strings_and_blanks_mbid(fixture):
     record = artist_record(fixture("lastfm_artist_getinfo.json"), "twice", "2026-11-24")
-    assert record == {"snapshot_date": "2026-11-24", "group": "twice", "artist_mbid": None,
+    assert record == {"snapshot_date": "2026-11-24", "artist": "twice", "artist_mbid": None,
                       "listeners": 1480312, "playcount": 198765432}
     assert split_valid([record], load_contract("lastfm_artist_stats"))[1] == []
 

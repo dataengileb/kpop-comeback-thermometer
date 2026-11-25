@@ -1,0 +1,34 @@
+{
+  "channels": [
+    {"handle": "@JYPEntertainment", "market": "kr"},
+    {"handle": "@twicejapan_official", "market": "jp"},
+    {"handle": "@nmixxjapan_official", "market": "jp"},
+    {"handle": "@triplescosmos", "market": "kr"}
+  ],
+  "artists": [
+    {"slug": "twice", "name": "TWICE", "kind": "group", "parent": null,
+     "musicbrainz_id": "8da127cc-c432-418f-b356-ef36210d82ac",
+     "channels": ["@JYPEntertainment", "@twicejapan_official"]},
+    {"slug": "misamo", "name": "MISAMO", "kind": "unit", "parent": "twice",
+     "musicbrainz_id": "e148e786-f078-49e2-a9fb-fd044bd68905",
+     "channels": ["@JYPEntertainment", "@twicejapan_official"]},
+    {"slug": "nayeon", "name": "NAYEON", "kind": "solo", "parent": "twice",
+     "musicbrainz_id": "e107bde8-78f0-4646-8925-68007a15880e",
+     "channels": ["@JYPEntertainment", "@twicejapan_official"]},
+    {"slug": "jihyo", "name": "JIHYO", "kind": "solo", "parent": "twice",
+     "musicbrainz_id": "9fc92dfd-8367-4a7e-88f5-18b24baa1b70",
+     "channels": ["@JYPEntertainment", "@twicejapan_official"]},
+    {"slug": "chaeyoung", "name": "CHAEYOUNG", "kind": "solo", "parent": "twice",
+     "musicbrainz_id": "b37cfe02-c667-4c78-9c8c-f96944d1dff7",
+     "channels": ["@JYPEntertainment", "@twicejapan_official"]},
+    {"slug": "tzuyu", "name": "TZUYU", "kind": "solo", "parent": "twice",
+     "musicbrainz_id": "468eaa07-e991-4c9e-bff2-f84be07c290d",
+     "channels": ["@JYPEntertainment", "@twicejapan_official"]},
+    {"slug": "nmixx", "name": "NMIXX", "kind": "group", "parent": null,
+     "musicbrainz_id": "2d623e82-73e2-4179-9c44-e963980f2d58",
+     "channels": ["@JYPEntertainment", "@nmixxjapan_official"]},
+    {"slug": "triples", "name": "tripleS", "kind": "group", "parent": null,
+     "musicbrainz_id": "40017bd7-139b-4998-8688-9b2478ad3325",
+     "channels": ["@triplescosmos"]}
+  ]
+}

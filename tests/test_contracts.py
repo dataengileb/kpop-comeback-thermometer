@@ -1,10 +1,9 @@
-import json
 from pathlib import Path
 
 import pytest
 
 from common.contracts import CONTRACTS_DIR, load_contract, split_valid, validate
-from common.run import load_groups
+from common.run import load_artists, load_config
 
 SCHEMA = {
     "required": ["id", "views"],
@@ -45,9 +44,20 @@ def test_split_keeps_errors_with_the_bad_record():
 
 
 @pytest.mark.parametrize("path", sorted(CONTRACTS_DIR.glob("*.json")), ids=lambda p: p.stem)
-def test_contract_group_enum_matches_config(path: Path):
-    """A new group in config/groups.json must be added to every contract, or its rows get quarantined."""
+def test_contract_artist_enum_matches_config(path: Path):
+    """A new artist in config/artists.json must be added to every contract, or its rows get quarantined."""
     contract = load_contract(path.stem)
     assert contract["title"] == path.stem
-    slugs = sorted(g["slug"] for g in load_groups())
-    assert sorted(contract["properties"]["group"]["enum"]) == slugs
+    slugs = sorted(a["slug"] for a in load_artists())
+    assert sorted(contract["properties"]["artist"]["enum"]) == slugs
+
+
+def test_config_is_consistent():
+    config = load_config()
+    handles = {c["handle"] for c in config["channels"]}
+    slugs = {a["slug"] for a in config["artists"]}
+    for artist in config["artists"]:
+        assert set(artist["channels"]) <= handles, artist["slug"]
+        assert artist["parent"] is None or artist["parent"] in slugs, artist["slug"]
+        assert artist["kind"] in ("group", "unit", "solo"), artist["slug"]
+        assert len(artist["musicbrainz_id"]) == 36, artist["slug"]

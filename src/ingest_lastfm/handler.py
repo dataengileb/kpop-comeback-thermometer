@@ -1,10 +1,10 @@
-"""Daily snapshot of cumulative Last.fm listeners and scrobbles per group and per top track."""
+"""Daily snapshot of cumulative Last.fm listeners and scrobbles per artist and per top track."""
 
 import os
 
 from common import storage
 from common.http import get_json
-from common.run import load_groups, publish, snapshot_date
+from common.run import load_artists, publish, snapshot_date
 from common.secrets import get_secret
 
 API = "https://ws.audioscrobbler.com/2.0/"
@@ -29,7 +29,7 @@ def artist_record(info: dict, slug: str, day: str) -> dict:
     artist = info["artist"]
     return {
         "snapshot_date": day,
-        "group": slug,
+        "artist": slug,
         "artist_mbid": artist.get("mbid") or None,
         "listeners": _to_int(artist.get("stats", {}).get("listeners")),
         "playcount": _to_int(artist.get("stats", {}).get("playcount")),
@@ -40,7 +40,7 @@ def track_records(top: dict, slug: str, day: str) -> list[dict]:
     return [
         {
             "snapshot_date": day,
-            "group": slug,
+            "artist": slug,
             "track": track.get("name"),
             "track_mbid": track.get("mbid") or None,
             "rank": _to_int(track.get("@attr", {}).get("rank")),
@@ -55,13 +55,13 @@ def lambda_handler(event, context):
     day = snapshot_date(event)
     key = get_secret(os.environ["LASTFM_KEY_PARAM"])
     artists, tracks = [], []
-    for group in load_groups():
-        info = _call("artist.getinfo", group["lastfm_name"], key)
-        top = _call("artist.gettoptracks", group["lastfm_name"], key, limit=50)
-        storage.put_json(storage.raw_key("lastfm", day, f"artist_{group['slug']}"), info)
-        storage.put_json(storage.raw_key("lastfm", day, f"toptracks_{group['slug']}"), top)
-        artists.append(artist_record(info, group["slug"], day))
-        tracks.extend(track_records(top, group["slug"], day))
+    for artist in load_artists():
+        info = _call("artist.getinfo", artist["name"], key)
+        top = _call("artist.gettoptracks", artist["name"], key, limit=50)
+        storage.put_json(storage.raw_key("lastfm", day, f"artist_{artist['slug']}"), info)
+        storage.put_json(storage.raw_key("lastfm", day, f"toptracks_{artist['slug']}"), top)
+        artists.append(artist_record(info, artist["slug"], day))
+        tracks.extend(track_records(top, artist["slug"], day))
     return [
         publish("lastfm_artist_stats", "lastfm_artist_stats", artists, day),
         publish("lastfm_track_stats", "lastfm_track_stats", tracks, day),

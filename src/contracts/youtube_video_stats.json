@@ -3,10 +3,11 @@
   "title": "youtube_video_stats",
   "description": "One music video's cumulative counters on a snapshot date. Source: YouTube Data API v3 videos.list.",
   "type": "object",
-  "required": ["snapshot_date", "group", "video_id", "title", "published_at", "view_count"],
+  "required": ["snapshot_date", "artist", "video_id", "title", "published_at", "market", "view_count"],
   "properties": {
     "snapshot_date": {"type": "string", "format": "date"},
-    "group": {"type": "string", "enum": ["twice", "nmixx", "triples"]},
+    "artist": {"type": "string", "enum": ["twice", "misamo", "nayeon", "jihyo", "chaeyoung", "tzuyu", "nmixx", "triples"]},
+    "market": {"type": "string", "enum": ["kr", "jp"]},
     "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{11}$"},
     "title": {"type": "string", "minLength": 1},
     "published_at": {"type": "string", "format": "date-time"},

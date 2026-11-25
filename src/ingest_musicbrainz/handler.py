@@ -6,7 +6,7 @@ import time
 
 from common import storage
 from common.http import get_json
-from common.run import load_groups, publish, snapshot_date
+from common.run import load_artists, publish, snapshot_date
 
 API = "https://musicbrainz.org/ws/2"
 RELEASE_TYPES = "album|ep|single"
@@ -15,17 +15,6 @@ RELEASE_TYPES = "album|ep|single"
 def _get(path: str, params: dict) -> dict:
     time.sleep(1.1)
     return get_json(f"{API}/{path}", {**params, "fmt": "json"})
-
-
-def resolve_artist_id(group: dict) -> str:
-    """Use the pinned MBID when the config has one; otherwise take the exact-name Korean group."""
-    if group.get("musicbrainz_id"):
-        return group["musicbrainz_id"]
-    result = _get("artist", {"query": f'artist:"{group["name"]}" AND type:group AND country:KR', "limit": 5})
-    for artist in result.get("artists", []):
-        if artist["name"].casefold() == group["name"].casefold():
-            return artist["id"]
-    raise ValueError(f"MusicBrainz artist not found: {group['name']}")
 
 
 def browse_release_groups(artist_id: str) -> list[dict]:
@@ -42,7 +31,7 @@ def to_records(pages: list[dict], slug: str, day: str) -> list[dict]:
     return [
         {
             "snapshot_date": day,
-            "group": slug,
+            "artist": slug,
             "release_group_id": rg["id"],
             "title": rg["title"],
             "primary_type": rg.get("primary-type"),
@@ -58,9 +47,9 @@ def to_records(pages: list[dict], slug: str, day: str) -> list[dict]:
 def lambda_handler(event, context):
     day = snapshot_date(event)
     records = []
-    for group in load_groups():
-        artist_id = resolve_artist_id(group)
-        pages = browse_release_groups(artist_id)
-        storage.put_json(storage.raw_key("musicbrainz", day, f"release_groups_{group['slug']}"), pages)
-        records.extend(to_records(pages, group["slug"], day))
+    for artist in load_artists():
+        # MBIDs are pinned in the config: names like NAYEON or TWICE are shared by other artists.
+        pages = browse_release_groups(artist["musicbrainz_id"])
+        storage.put_json(storage.raw_key("musicbrainz", day, f"release_groups_{artist['slug']}"), pages)
+        records.extend(to_records(pages, artist["slug"], day))
     return publish("musicbrainz_release", "musicbrainz_release", records, day)

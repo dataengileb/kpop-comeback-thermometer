@@ -7,15 +7,20 @@ from pathlib import Path
 
 from common import contracts, storage
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "groups.json"
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "artists.json"
 
 
 class QualityGateError(Exception):
     """Raised when too many records break the contract. Step Functions stops the run on it."""
 
 
-def load_groups() -> list[dict]:
-    return json.loads(CONFIG_PATH.read_text())["groups"]
+def load_config() -> dict:
+    """Artists (groups, units and soloists) and the YouTube channels their videos appear on."""
+    return json.loads(CONFIG_PATH.read_text())
+
+
+def load_artists() -> list[dict]:
+    return load_config()["artists"]
 
 
 def snapshot_date(event: dict) -> str:

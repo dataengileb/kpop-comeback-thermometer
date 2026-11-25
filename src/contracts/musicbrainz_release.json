@@ -3,10 +3,10 @@
   "title": "musicbrainz_release",
   "description": "One release group (album, EP or single) with its first release date. Source: MusicBrainz release-group browse.",
   "type": "object",
-  "required": ["snapshot_date", "group", "release_group_id", "title", "primary_type", "first_release_date"],
+  "required": ["snapshot_date", "artist", "release_group_id", "title", "primary_type", "first_release_date"],
   "properties": {
     "snapshot_date": {"type": "string", "format": "date"},
-    "group": {"type": "string", "enum": ["twice", "nmixx", "triples"]},
+    "artist": {"type": "string", "enum": ["twice", "misamo", "nayeon", "jihyo", "chaeyoung", "tzuyu", "nmixx", "triples"]},
     "release_group_id": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
     "title": {"type": "string", "minLength": 1},
     "primary_type": {"type": "string", "enum": ["Album", "EP", "Single"]},

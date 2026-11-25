@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-¿Qué tan fuerte arrancó cada comeback de TWICE, NMIXX y tripleS, comparado con los anteriores del mismo grupo? YouTube muestra totales históricos, que siempre favorecen a los éxitos viejos. Este proyecto toma una foto diaria de los contadores para medir un lanzamiento al día 1, 7 y 28.
+¿Qué tan fuerte arrancó cada comeback de TWICE, NMIXX y tripleS, coreano o japonés, comparado con los anteriores del mismo artista? Incluye a MISAMO, la unidad de TWICE, y los lanzamientos en solitario de NAYEON, JIHYO, CHAEYOUNG y TZUYU. YouTube muestra totales históricos, que siempre favorecen a los éxitos viejos. Este proyecto toma una foto diaria de los contadores para medir un lanzamiento al día 1, 7 y 28.
 
 **Sitio:** llega en la fase 3. **Estado:** fase 1 de 3, ingesta con contratos de datos.
 
@@ -24,7 +24,8 @@ Es la modernización de [mi versión de 2023](https://github.com/Proggleb/youtub
 - Mide atención en YouTube y Last.fm, no ventas, posiciones en charts ni streams en otras plataformas.
 - Los usuarios de Last.fm son sobre todo occidentales; el consumo en Corea está subrepresentado.
 - Los valores al día N solo existen para videos publicados después de la primera foto. Los comebacks anteriores se muestran, pero no se comparan.
-- No incluye sub-unidades ni lanzamientos en solitario.
+- Cada lanzamiento se compara solo con los del mismo artista para el mismo mercado (Corea o Japón): un MV japonés o un debut en solitario no se mide contra un sencillo principal de TWICE.
+- No incluye otras sub-unidades (como las de tripleS) ni a otras solistas.
 
 ## Despliegue
 

@@ -14,7 +14,7 @@ A daily batch pipeline in the client's AWS account that snapshots the three sour
 
 ## Assumptions
 - The client provides one AWS free-tier account and creates the two API keys.
-- YouTube music videos are uploaded to the official channels listed in `src/config/groups.json`.
+- YouTube music videos are uploaded to the official channels listed in [`src/config/artists.json`](../src/config/artists.json).
 - A music video's publish time is the start of the comeback (day 0).
 
 ## Risks
@@ -22,7 +22,7 @@ A daily batch pipeline in the client's AWS account that snapshots the three sour
 | --- | --- |
 | No history before the first snapshot | Criterion 3: older comebacks are shown but not ranked |
 | A channel renames its videos and the title filter misses one | Matched videos are logged; filter covered by tests |
-| YouTube quota exhausted | A run uses under 200 of 10,000 daily units |
+| YouTube quota exhausted | A run uses a few hundred of 10,000 daily units |
 | Free-tier credits run out | Budget alert on the first cent; the site keeps working from the last export |
 
 ## Out of scope

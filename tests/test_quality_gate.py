@@ -14,7 +14,7 @@ def written(monkeypatch):
 
 
 def _record(views):
-    return {"snapshot_date": "2026-11-24", "group": "twice", "listeners": 1, "playcount": views}
+    return {"snapshot_date": "2026-11-24", "artist": "twice", "listeners": 1, "playcount": views}
 
 
 def test_same_day_always_writes_the_same_keys(written):
