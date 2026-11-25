@@ -21,9 +21,13 @@ API = "https://www.googleapis.com/youtube/v3"
 #   NAYEON "LOVE COUNTDOWN" (Feat. Wonstein) M/V
 #   tripleS(트리플에스) '깨어' (Are You Alive) Official MV
 #   tripleS 'Baby Flower' Japanese Ver. Official MV
-# Teasers, dance practices and sub-unit videos (tripleS(トリプルエス) ∞! ‘...’) do not match.
+#   트리플에스(tripleS) 'Rising' MV
+#   tripleS(트리플에스) msnz moon 'Cameo Love' Official MV      (unit titled under its group)
+#   트리플에스(tripleS AAA) ‘Generation’ MV                      (same, native name first)
+# Teasers, dance practices and performance videos do not match. A unit's MV never matches
+# its group, because the unit name sits between the group name and the song title.
 MV_TITLE = (
-    r"^{name}\s*(\([^)]*\))?\s*"            # artist, optional native-script name
+    r"^{artist}\s*"                         # artist as written in titles, see title_prefix()
     r"[\"“'‘「『].+[\"”'’」』]\s*"           # quoted song title
     r"(\([^)]*\)\s*)?"                     # optional (Feat. ...) or English title
     r"(-?\s*Japanese\s+Ver\.?\s*-?\s*)?"    # optional Japanese version tag
@@ -32,8 +36,22 @@ MV_TITLE = (
 JAPANESE_TITLE = re.compile(r"Japanese\s+Ver|[「『]|[\u3040-\u30ff]", re.IGNORECASE)
 
 
-def mv_pattern(name: str) -> re.Pattern:
-    return re.compile(MV_TITLE.format(name=re.escape(name)), re.IGNORECASE)
+def _literal(name: str) -> str:
+    return re.escape(name).replace(r"\ ", r"\s+")
+
+
+def title_prefix(artist: dict, parent: dict | None) -> str:
+    """How the artist appears at the start of a title: 'NMIXX(엔믹스)', '트리플에스(tripleS)',
+    or for a unit titled under its group, 'tripleS(트리플에스) msnz moon' / '트리플에스(tripleS AAA)'."""
+    names = "|".join(_literal(n) for n in artist.get("title_names") or [artist["name"]])
+    if artist.get("titled_under_parent"):
+        group = _literal(parent["name"])
+        return rf"(?:{group}(?:\s*\([^)]*\))?\s+(?:{names})|[^\s(]+\s*\({group}\s+(?:{names})\))"
+    return rf"(?:(?:{names})(?:\s*\([^)]*\))?|[^\s(]+\s*\((?:{names})\))"
+
+
+def mv_pattern(artist: dict, parent: dict | None = None) -> re.Pattern:
+    return re.compile(MV_TITLE.format(artist=title_prefix(artist, parent)), re.IGNORECASE)
 
 
 def market_of(title: str, channel_market: str) -> str:
@@ -64,18 +82,21 @@ def list_uploads(playlist_id: str, key: str, earliest: str) -> list[dict]:
             return pages
 
 
-def match_music_videos(pages: list[dict], artists: list[dict], channel_market: str) -> dict[str, dict]:
-    """Map video_id -> {artist, market} for uploads whose title looks like an official MV."""
-    patterns = [(a["slug"], mv_pattern(a["name"])) for a in artists]
+def match_music_videos(pages: list[dict], artists: list[dict], channel_market: str,
+                       all_artists: list[dict] | None = None) -> dict[str, dict]:
+    """Map video_id -> {artist, market} for uploads that are official MVs: the title matches the
+    artist's pattern, or the video is listed in the artist's extra_mv_ids."""
+    by_slug = {a["slug"]: a for a in all_artists or artists}
+    patterns = [(a["slug"], mv_pattern(a, by_slug.get(a["parent"]))) for a in artists]
+    extras = {vid: a["slug"] for a in artists for vid in a.get("extra_mv_ids", [])}
     matches = {}
     for page in pages:
         for item in page.get("items") or []:
             title = item["snippet"]["title"]
             video_id = item["snippet"]["resourceId"]["videoId"]
-            for slug, pattern in patterns:
-                if pattern.search(title):
-                    matches[video_id] = {"artist": slug, "market": market_of(title, channel_market)}
-                    break
+            slug = extras.get(video_id) or next((s for s, p in patterns if p.search(title)), None)
+            if slug:
+                matches[video_id] = {"artist": slug, "market": market_of(title, channel_market)}
     return matches
 
 
@@ -117,7 +138,7 @@ def lambda_handler(event, context):
         name = handle.lstrip("@").lower()
         storage.put_json(storage.raw_key("youtube", day, f"channel_{name}"), payload)
         storage.put_json(storage.raw_key("youtube", day, f"uploads_{name}"), pages)
-        matches.update(match_music_videos(pages, artists, channel["market"]))
+        matches.update(match_music_videos(pages, artists, channel["market"], config["artists"]))
 
     ids = sorted(matches)
     video_pages = [

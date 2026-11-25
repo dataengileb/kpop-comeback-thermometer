@@ -61,3 +61,7 @@ def test_config_is_consistent():
         assert artist["parent"] is None or artist["parent"] in slugs, artist["slug"]
         assert artist["kind"] in ("group", "unit", "solo"), artist["slug"]
         assert len(artist["musicbrainz_id"]) == 36, artist["slug"]
+        if artist.get("titled_under_parent"):
+            assert artist["parent"] in slugs, artist["slug"]
+    # Slugs are the join key everywhere, so they must be unique.
+    assert len(slugs) == len(config["artists"])

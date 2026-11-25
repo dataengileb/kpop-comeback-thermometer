@@ -6,7 +6,7 @@
   "required": ["snapshot_date", "artist", "release_group_id", "title", "primary_type", "first_release_date"],
   "properties": {
     "snapshot_date": {"type": "string", "format": "date"},
-    "artist": {"type": "string", "enum": ["twice", "misamo", "nayeon", "jihyo", "chaeyoung", "tzuyu", "nmixx", "triples"]},
+    "artist": {"type": "string", "enum": ["twice", "misamo", "nayeon", "jihyo", "chaeyoung", "tzuyu", "nmixx", "triples", "triples-aaa", "triples-kre", "triples-lovelution", "triples-evolution", "triples-aria", "triples-vv", "triples-infinity", "triples-msnz-sun", "triples-msnz-moon", "triples-msnz-neptune", "triples-msnz-zenith"]},
     "release_group_id": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
     "title": {"type": "string", "minLength": 1},
     "primary_type": {"type": "string", "enum": ["Album", "EP", "Single"]},

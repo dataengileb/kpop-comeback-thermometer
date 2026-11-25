@@ -6,7 +6,7 @@
   "required": ["snapshot_date", "artist", "listeners", "playcount"],
   "properties": {
     "snapshot_date": {"type": "string", "format": "date"},
-    "artist": {"type": "string", "enum": ["twice", "misamo", "nayeon", "jihyo", "chaeyoung", "tzuyu", "nmixx", "triples"]},
+    "artist": {"type": "string", "enum": ["twice", "misamo", "nayeon", "jihyo", "chaeyoung", "tzuyu", "nmixx", "triples", "triples-aaa", "triples-kre", "triples-lovelution", "triples-evolution", "triples-aria", "triples-vv", "triples-infinity", "triples-msnz-sun", "triples-msnz-moon", "triples-msnz-neptune", "triples-msnz-zenith"]},
     "artist_mbid": {"type": ["string", "null"]},
     "listeners": {"type": "integer", "minimum": 0},
     "playcount": {"type": "integer", "minimum": 0}
