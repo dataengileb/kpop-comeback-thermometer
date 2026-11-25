@@ -12,9 +12,9 @@ How strong was the start of each comeback by TWICE, NMIXX and tripleS, their uni
 2. Athena rebuilds two Iceberg gold tables with `MERGE` and runs data checks ([ADR 4](docs/adr/0004-gold-iceberg-tables-rebuilt-with-merge.md)).
 3. A Lambda exports gold to a dated JSON file, which the static site reads. The site never calls AWS.
 
-![Architecture: EventBridge Scheduler starts Step Functions daily. It runs three ingestion Lambdas in parallel, which read API keys from SSM, call YouTube, Last.fm and MusicBrainz, and write to S3. Athena then MERGEs the validated data into two gold Iceberg tables through the Glue catalog, checks them and vacuums them. Failed runs or checks go to SNS email, and AWS Budgets alerts on the first cent. The dated export and the GitHub Pages site are planned.](docs/architecture.png)
+![Architecture: EventBridge Scheduler starts Step Functions daily. It runs three ingestion Lambdas in parallel, which read API keys from SSM, pull from YouTube, Last.fm and MusicBrainz, and write to S3. Athena then MERGEs the validated data into two gold Iceberg tables through the Glue catalog, checks them and vacuums them. The export_site Lambda reads gold and writes a dated JSON export to S3; fetch_export.sh copies it into site/data/ and publish_site.sh pushes the site to GitHub Pages, which never calls AWS. Failed runs or checks go to SNS email, and AWS Budgets alerts on the first cent.](docs/architecture.png)
 
-Drawn with [Diagramon](https://github.com/dataengileb/diagramon) from [its source](docs/architecture.diagramon.txt); dashed and grey parts (phase 3) are planned.
+Drawn with [Diagramon](https://github.com/dataengileb/diagramon) from [its source](docs/architecture.diagramon.txt). Cyan marks the main data flow, pink the alerts.
 
 A modernization of [my 2023 version](https://github.com/Proggleb/youtube_data_engineering_project) (EC2 + RDS + Tableau). Why it changed: [ADR 1](docs/adr/0001-serverless-batch-instead-of-ec2-rds.md).
 
