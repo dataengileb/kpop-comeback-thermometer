@@ -28,7 +28,7 @@ Es la modernización de [mi versión de 2023](https://github.com/Proggleb/youtub
 
 ## Cómo correrlo
 
-Necesitas una cuenta de AWS, el AWS CLI y Python 3.14. Las llaves y el stack deben estar en la misma región (`us-east-1`, salvo que definas `AWS_REGION`). El costo es de unos USD 0.01 al mes, todo de Athena.
+Necesitas una cuenta de AWS, el AWS CLI y Python 3.14. Las llaves y el stack deben estar en la misma región (`us-east-1`, salvo que definas `AWS_REGION`). El costo es de unos USD 0.01 al mes, todo de Athena, cubierto por los créditos del free tier: cero gasto de bolsillo. Una alerta de presupuesto, neta de créditos, te avisa desde el primer centavo gastado.
 
 ```bash
 read -rs KEY && aws ssm put-parameter --region us-east-1 --type SecureString --name /comeback-thermometer/youtube-api-key --value "$KEY"
