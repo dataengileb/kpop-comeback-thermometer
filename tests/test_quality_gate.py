@@ -29,6 +29,8 @@ def test_same_day_always_writes_the_same_keys(written):
 def test_gate_stops_the_run_when_too_many_records_break_the_contract(written):
     with pytest.raises(run.QualityGateError):
         run.publish("lastfm_artist_stats", "lastfm_artist_stats", [_record(1), _record("x")], "2026-11-24")
+    # The bad rows are kept for diagnosis, but nothing reaches validated/ for that day.
+    assert list(written) == ["quarantine/lastfm_artist_stats/snapshot_date=2026-11-24/part-0000.jsonl"]
 
 
 def test_gate_stops_the_run_on_an_empty_source(written):
