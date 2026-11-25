@@ -25,6 +25,7 @@ Es la modernización de [mi versión de 2023](https://github.com/Proggleb/youtub
 - Cada lanzamiento se compara solo con los del mismo artista para el mismo mercado (Corea o Japón): un MV japonés o un debut en solitario no se mide contra un sencillo principal de TWICE.
 - Los usuarios de Last.fm son sobre todo occidentales, y Last.fm se omite para las unidades de tripleS porque acredita sus reproducciones a tripleS.
 - Solo incluye artistas con un MV oficial en los canales de `artists.json`.
+- Guarda estadísticas de YouTube más allá de los 30 días que permiten sus políticas, y las compara entre sí. Se acepta en este proyecto académico sin fines comerciales, no para un cliente comercial ([riesgo](docs/sow.md#6-risks)).
 
 ## Cómo correrlo
 

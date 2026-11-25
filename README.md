@@ -25,6 +25,7 @@ A modernization of [my 2023 version](https://github.com/Proggleb/youtube_data_en
 - Each release is compared only with the same artist's releases for the same market (Korea or Japan): a Japanese MV or a solo debut is not measured against a TWICE title track.
 - Last.fm users skew toward Western listeners, and Last.fm is skipped for tripleS's units, whose plays it credits to tripleS.
 - Only artists with an official MV on the channels in `artists.json` are covered.
+- It keeps YouTube statistics past the 30 days YouTube's policies allow, and ranks them. That is accepted for this non-commercial course project, not for a commercial client ([risk](docs/sow.md#6-risks)).
 
 ## Run it
 
