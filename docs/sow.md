@@ -5,13 +5,7 @@
 ## 1. Approach
 YouTube and Last.fm only return totals as of today, and no source publishes how a video grew. The provider will therefore build a daily batch pipeline in the client's AWS account. It takes a snapshot of every counter each day, keeps the raw responses, validates each record against a data contract, and computes views at day 1, 7 and 28 from those snapshots. A dated export of the results feeds a static bilingual site. The design decisions are recorded in [docs/adr](adr/).
 
-| Source | Used for | Limits |
-| --- | --- | --- |
-| YouTube Data API v3 | Views, likes and comments per music video | Lifetime totals only; 10,000 quota units a day |
-| Last.fm API | Listeners and scrobbles per artist | Mostly Western listeners; tripleS units are not reliable there |
-| MusicBrainz | Release list and dates | Community-edited; some dates have only the year |
-
-Spotify was considered and dropped: since February 2026 its API no longer returns popularity or follower counts to new apps.
+The sources are the three in the RFP's [Data available](rfp.md#data-available). Known limits: Last.fm users are mostly Western, and Last.fm credits tripleS's units to tripleS; some MusicBrainz dates have only the year.
 
 ## 2. Deliverables and acceptance
 | # | Deliverable | Accepted when |
@@ -19,7 +13,7 @@ Spotify was considered and dropped: since February 2026 its API no longer return
 | 1 | Daily ingestion | Seven consecutive daily runs succeed; invalid records land in quarantine with a reason; a forced failure sends the alert email |
 | 2 | Gold tables | Re-running a day leaves the tables unchanged, and every data check passes |
 | 3 | Dated export | One command copies the latest export into `site/data/` |
-| 4 | Public site | The client reviews it in both languages; it shows the data date and works with the AWS account unreachable |
+| 4 | Public site | Every [acceptance criterion](rfp.md#acceptance-criteria) in the RFP holds when the client checks the site |
 | 5 | Handover | The README, ADRs and this SOW let the client's team deploy from scratch |
 | 6 | Executive presentation | Twenty minutes with the client, followed by questions |
 
