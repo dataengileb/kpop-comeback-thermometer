@@ -1,0 +1,111 @@
+/* "Neón sobre Negro" design system: pure black, soft white ink, pastels to organise,
+   one neon for what matters. Tokens are copied as-is; type sizes are scaled for screens. */
+:root {
+  --bg: #000000;
+  --surface-raised: #141414;
+  --line: #5a5a5a;
+  --ink: #f2f2f2;
+  --ink-muted: #a8a8a8;
+  --pastel-lavanda: #c9b8ff;
+  --pastel-menta: #b5f2d0;
+  --pastel-durazno: #ffc9a8;
+  --pastel-cielo: #a8d8ff;
+  --neon-cian: #00e5ff;
+  --neon-lima: #b6ff3b;
+  --neon-rosa: #ff4fb0;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+  --space-2: 16px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 17px/1.55 var(--font-sans);
+}
+
+a { color: var(--pastel-cielo); }
+a:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--neon-cian); outline-offset: 3px; }
+
+.wrap { max-width: 1000px; margin: 0 auto; padding: 0 var(--space-4); }
+
+/* Header: title with the one neon highlighter bar; the snapshot date is the key fact. */
+.top { padding: var(--space-6) 0 var(--space-4); border-bottom: 2px solid var(--line); }
+.title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); }
+h1 {
+  margin: 0; font: 700 clamp(2rem, 5vw, 3.2rem)/1 var(--font-display); letter-spacing: -0.02em;
+}
+h1::after {
+  content: ""; display: block; width: 4.5em; height: 10px; margin-top: 14px;
+  background: var(--neon-cian); border-radius: var(--radius-sm);
+}
+.question { margin: var(--space-2) 0 8px; max-width: 44rem; font-size: 1.15rem; font-weight: 500; color: var(--pastel-lavanda); }
+.asof { margin: 0; color: var(--ink-muted); }
+.asof strong { color: var(--ink); font-family: var(--font-mono); font-weight: 500; }
+
+.lang {
+  background: var(--surface-raised); color: var(--ink); border: 2px solid var(--line);
+  border-radius: var(--radius-sm); padding: 6px 14px; font: 500 0.95rem var(--font-sans); cursor: pointer;
+}
+.lang:hover { border-color: var(--pastel-lavanda); }
+
+/* Filters */
+.controls { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: end; margin: var(--space-4) 0 0; }
+.controls label { display: grid; gap: 6px; color: var(--ink-muted); font-size: 0.9rem; }
+select {
+  background: var(--surface-raised); color: var(--ink); border: 2px solid var(--line);
+  border-radius: var(--radius-sm); padding: 8px 12px; font: inherit; min-width: 240px;
+}
+.market { display: flex; align-items: center; gap: 8px; color: var(--ink-muted); font-size: 0.9rem; }
+.market span { margin-right: 4px; }
+.market button {
+  background: var(--surface-raised); color: var(--ink); border: 2px solid var(--line);
+  border-radius: var(--radius-sm); padding: 7px 16px; font: inherit; cursor: pointer;
+}
+.market button[aria-checked="true"] { border-color: var(--pastel-lavanda); color: var(--pastel-lavanda); }
+.market button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Sections and tables */
+h2 { font: 700 1.5rem/1.2 var(--font-display); margin: var(--space-6) 0 6px; }
+.note { color: var(--ink-muted); margin: 0 0 var(--space-2); max-width: 46rem; }
+
+.table-wrap { overflow-x: auto; border: 2px solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #2a2a2a; vertical-align: top; }
+th { color: var(--ink-muted); font-weight: 500; font-size: 0.85rem; }
+tbody tr:last-child td { border-bottom: 0; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.empty { color: var(--ink-muted); text-align: center; padding: var(--space-4); }
+td a { color: var(--ink); text-decoration-color: var(--line); text-underline-offset: 3px; }
+td a:hover { color: var(--pastel-cielo); }
+.rank { display: block; font-size: 0.82rem; color: var(--pastel-lavanda); }
+.rank-first { color: var(--neon-lima); }
+.dup { display: block; color: var(--ink-muted); font-size: 0.82rem; }
+
+/* Last.fm cards */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-2); margin: 0; }
+.stats div { background: var(--surface-raised); border: 2px solid var(--line); border-radius: var(--radius-md); padding: 18px 20px; }
+.stats dt { color: var(--ink-muted); font-size: 0.9rem; }
+.stats dd { margin: 6px 0 0; font: 700 1.9rem/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.stats small { display: block; margin-top: 4px; color: var(--pastel-menta); font: 400 0.85rem var(--font-sans); }
+
+.scope ul { padding-left: 1.2rem; max-width: 46rem; }
+.scope li { margin: 8px 0; }
+
+.foot { border-top: 2px solid var(--line); margin-top: var(--space-6); padding-top: var(--space-2); padding-bottom: var(--space-4); color: var(--ink-muted); font-size: 0.9rem; }
+
+@media (max-width: 600px) {
+  .wrap { padding: 0 var(--space-2); }
+  select { min-width: 0; width: 100%; }
+  .controls label { flex: 1 1 100%; }
+  th, td { padding: 10px 12px; }
+}
