@@ -1,67 +1,71 @@
 # Comeback Thermometer architecture in Diagramon text format (https://github.com/dataengileb/diagramon).
-# Readable source; docs/architecture.diagramon.json is the same diagram with its layout: open it in Diagramon,
-# pick the dark theme and the Neon palette, and use Export > PNG to refresh docs/architecture.png.
-# Truth: infra/template.yaml. Dashed and grey = planned (phase 3).
+# Readable source; docs/architecture.diagramon.json is the same diagram with its layout: open it in Diagramon
+# and use Export > PNG to refresh docs/architecture.png. Truth: infra/template.yaml.
+# Colors: "Neon on Black" (black #000000, boxes #141414, lines #5A5A5A, text #F2F2F2 / #A8A8A8,
+# neon cyan #00E5FF for the main data flow, pink #FF4FB0 for alerts). Before exporting, Diagramon's
+# black theme and Neon palette take these values and node borders are set to #5A5A5A.
 
 title: Comeback Thermometer
 direction: LR
 lines: elbow
-version: phase 2 of 3
+version: phase 3 of 3
 
-phase p1: "Phase 1 · ingestion"
-phase p2: "Phase 2 · gold in Athena"
-phase p3: "Phase 3 · static site"
+type flow: "Main data flow" color=#00E5FF width=3 particles=2
+type ctl: "Orchestration and access" color=#5A5A5A width=2 particles=0
+type alert: "Failure and cost alerts" dash="6 4" color=#FF4FB0 width=2 particles=1
 
-type planned: "Planned" dash="6 4" color=#8b93a1 width=2 particles=0
-
-group ext "External APIs" color=lavender {
+group ext "External APIs" color=#C9B8FF {
   yt: YouTube Data API v3 [web] "API key"
   lfm: Last.fm API [web] "API key"
   mb: MusicBrainz API [web] "no key"
 }
 
-group aws "AWS account · free tier" color=peach {
+group aws "AWS account · free tier" color=#FFC9A8 {
   sched: EventBridge Scheduler [aws/eventbridge] "daily 07:00 Mexico City"
-  sfn: Step Functions [aws/stepfunctions] "JSONata · ingest, then gold"
-  group ingest "Ingestion Lambdas · Python stdlib" color=sky {
+  sfn: Step Functions [aws/stepfunctions] "ingest · gold · export"
+  group ingest "Ingestion Lambdas · Python stdlib" color=#A8D8FF {
     fyt: ingest_youtube [aws/lambda]
     flfm: ingest_lastfm [aws/lambda]
     fmb: ingest_musicbrainz [aws/lambda]
   }
   ssm: SSM Parameter Store [aws/systemsmanager] "API keys · SecureString"
-  s3: S3 data bucket [aws/s3] "raw · validated · quarantine"
-  athena: Athena workgroup [aws/athena] "MERGE · checks · VACUUM" phase=p2
-  glue: Glue Data Catalog [aws/glue] "silver tables · projection" phase=p2
-  gold: Gold Iceberg tables [aws/s3] "mv_launch · artist_daily" phase=p2
+  s3: S3 data bucket [aws/s3] "raw · validated · exports"
+  athena: Athena workgroup [aws/athena] "MERGE · checks · VACUUM"
+  glue: Glue Data Catalog [aws/glue] "silver tables · projection"
+  gold: Gold Iceberg tables [aws/s3] "mv_launch · artist_daily"
+  fexp: export_site [aws/lambda] "dated site JSON"
   sns: SNS alert topic [aws/sns] "failed run or check"
   budget: AWS Budgets [email] "alert on the first cent"
 }
 
-group site "No AWS connection · planned" color=#8b93a1 phase=p3 {
-  export: Dated export [storage] "site/data/"
-  pages: GitHub Pages [web] "static site"
+group site "Static site · never calls AWS" color=#B5F2D0 {
+  repo: site/data/ [storage] "latest.json + dated copy"
+  pages: GitHub Pages [web] "gh-pages branch"
 }
 
 mail: Alert email [user] "maintainer"
 
-sched -> sfn : StartExecution
-sfn -> fyt
-sfn -> flfm
-sfn -> fmb
-fyt -> ssm
-flfm -> ssm
-fyt -> yt : HTTPS
-flfm -> lfm : HTTPS
-fmb -> mb : HTTPS
-fyt => s3
-flfm => s3
-fmb => s3
-sfn -> athena : queries phase=p2
-athena -> glue : catalog phase=p2
-athena => s3 : read validated/, write athena-results/ phase=p2
-athena => gold : MERGE phase=p2
-sfn ~> sns : Catch
-sns -> mail : email
-budget -> mail : email
-gold -> export : query style=planned phase=p3
-export -> pages : git push style=planned phase=p3
+sched -> sfn : StartExecution style=ctl
+sfn -> fyt : style=ctl
+sfn -> flfm : style=ctl
+sfn -> fmb : style=ctl
+fyt -> ssm : style=ctl
+flfm -> ssm : style=ctl
+yt -> fyt : HTTPS style=flow
+lfm -> flfm : HTTPS style=flow
+mb -> fmb : HTTPS style=flow
+fyt -> s3 : style=flow
+flfm -> s3 : style=flow
+fmb -> s3 : style=flow
+sfn -> athena : queries style=ctl
+athena -> glue : catalog style=ctl
+s3 -> athena : validated/ style=flow
+athena -> gold : MERGE style=flow
+sfn -> fexp : style=ctl
+gold -> fexp : SELECT via Athena style=flow
+fexp -> s3 : exports/ style=flow
+s3 -> repo : fetch_export.sh style=flow
+repo -> pages : publish_site.sh style=flow
+sfn -> sns : Catch style=alert
+sns -> mail : email style=alert
+budget -> mail : email style=alert
