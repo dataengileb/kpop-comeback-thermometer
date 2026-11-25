@@ -23,65 +23,128 @@
   </header>
 
   <main class="wrap">
+    <nav class="tabs" role="tablist" aria-label="View">
+      <button type="button" role="tab" id="tab-explore" aria-selected="true" aria-controls="explore" data-i18n="tab_explore"></button>
+      <button type="button" role="tab" id="tab-compare" aria-selected="false" aria-controls="compare" data-i18n="tab_compare"></button>
+    </nav>
+
     <section class="controls" aria-label="Filters">
-      <label>
+      <label id="pick-a-wrap">
         <span data-i18n="artist"></span>
-        <select id="artist"></select>
+        <select id="pick-a"></select>
+      </label>
+      <label id="pick-b-wrap" hidden>
+        <span data-i18n="versus"></span>
+        <select id="pick-b"></select>
       </label>
       <div class="market" role="radiogroup" aria-labelledby="market-label">
         <span id="market-label" data-i18n="market"></span>
-        <button type="button" role="radio" data-market="kr" aria-checked="true" data-i18n="kr"></button>
+        <button type="button" role="radio" data-market="all" aria-checked="true" data-i18n="all_markets"></button>
+        <button type="button" role="radio" data-market="kr" aria-checked="false" data-i18n="kr"></button>
         <button type="button" role="radio" data-market="jp" aria-checked="false" data-i18n="jp"></button>
       </div>
     </section>
 
-    <section aria-labelledby="ranked-title">
-      <h2 id="ranked-title" data-i18n="ranked_title"></h2>
-      <p class="note" id="ranked-note"></p>
-      <div class="table-wrap">
-        <table id="ranked">
-          <thead>
-            <tr>
-              <th scope="col" data-i18n="col_mv"></th>
-              <th scope="col" data-i18n="col_released"></th>
-              <th scope="col" class="num" data-i18n="col_d1"></th>
-              <th scope="col" class="num" data-i18n="col_d7"></th>
-              <th scope="col" class="num" data-i18n="col_d28"></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
+    <div id="explore" role="tabpanel" aria-labelledby="tab-explore">
+      <section aria-label="Summary"><div class="tiles" id="tiles"></div></section>
 
-    <section aria-labelledby="earlier-title">
-      <h2 id="earlier-title" data-i18n="earlier_title"></h2>
-      <p class="note" data-i18n="earlier_note"></p>
-      <div class="table-wrap">
-        <table id="earlier">
-          <thead>
-            <tr>
-              <th scope="col" data-i18n="col_mv"></th>
-              <th scope="col" data-i18n="col_released"></th>
-              <th scope="col" class="num" data-i18n="col_age"></th>
-              <th scope="col" class="num" data-i18n="col_views"></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
+      <section aria-labelledby="timeline-title">
+        <h2 id="timeline-title" data-i18n="timeline_title"></h2>
+        <p class="note" data-i18n="timeline_note"></p>
+        <div class="chart-card">
+          <ul class="legend" id="timeline-legend"></ul>
+          <div class="chart" id="timeline"></div>
+        </div>
+      </section>
 
-    <section aria-labelledby="lastfm-title" id="lastfm-section">
-      <h2 id="lastfm-title" data-i18n="lastfm_title"></h2>
-      <dl class="stats" id="lastfm"></dl>
-    </section>
+      <section aria-labelledby="curves-title">
+        <h2 id="curves-title" data-i18n="curves_title"></h2>
+        <p class="note" id="curves-note"></p>
+        <div class="chart-card" id="curves-card">
+          <ul class="legend" id="curves-legend"></ul>
+          <div class="chart" id="curves"></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="ranked-title">
+        <h2 id="ranked-title" data-i18n="ranked_title"></h2>
+        <p class="note" id="ranked-note"></p>
+        <div class="table-wrap">
+          <table id="ranked">
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="col_video"></th>
+                <th scope="col" data-i18n="col_released"></th>
+                <th scope="col" class="num" data-i18n="col_d1"></th>
+                <th scope="col" class="num" data-i18n="col_d7"></th>
+                <th scope="col" class="num" data-i18n="col_d28"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="earlier-title">
+        <h2 id="earlier-title" data-i18n="earlier_title"></h2>
+        <p class="note" data-i18n="earlier_note"></p>
+        <details class="table-details">
+          <summary id="earlier-summary"></summary>
+          <div class="table-wrap">
+            <table id="earlier">
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="col_video"></th>
+                  <th scope="col" data-i18n="col_released"></th>
+                  <th scope="col" class="num" data-i18n="col_age"></th>
+                  <th scope="col" class="num" data-i18n="col_views"></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section aria-labelledby="lastfm-title">
+        <h2 id="lastfm-title" data-i18n="lastfm_title"></h2>
+        <dl class="stats" id="lastfm"></dl>
+      </section>
+    </div>
+
+    <div id="compare" role="tabpanel" aria-labelledby="tab-compare" hidden>
+      <section aria-label="Comparison"><div class="versus" id="versus"></div></section>
+
+      <section aria-labelledby="peryear-title">
+        <h2 id="peryear-title" data-i18n="peryear_title"></h2>
+        <p class="note" data-i18n="peryear_note"></p>
+        <div class="chart-card">
+          <ul class="legend" id="peryear-legend"></ul>
+          <div class="chart" id="peryear"></div>
+        </div>
+        <details class="table-details">
+          <summary data-i18n="as_table"></summary>
+          <div class="table-wrap"><table id="peryear-table"></table></div>
+        </details>
+      </section>
+
+      <section aria-labelledby="overlay-title">
+        <h2 id="overlay-title" data-i18n="overlay_title"></h2>
+        <p class="note" data-i18n="timeline_note"></p>
+        <div class="chart-card">
+          <ul class="legend" id="overlay-legend"></ul>
+          <div class="chart" id="overlay"></div>
+        </div>
+      </section>
+    </div>
 
     <section aria-labelledby="scope-title" class="scope">
       <h2 id="scope-title" data-i18n="scope_title"></h2>
       <ul id="scope"></ul>
     </section>
   </main>
+
+  <div class="tooltip" id="tooltip" role="status" hidden></div>
 
   <footer class="wrap foot">
     <p data-i18n="footer_data"></p>
@@ -94,6 +157,7 @@
     </p>
   </footer>
 
+  <script src="charts.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
