@@ -1,0 +1,322 @@
+{
+  "formatVersion": 1,
+  "title": "Comeback Thermometer",
+  "direction": "LR",
+  "routing": "elbow",
+  "docId": "d-8c508b2140e05a92",
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1 · ingestion"
+    },
+    {
+      "id": "p2",
+      "name": "Phase 2 · Athena gold"
+    },
+    {
+      "id": "p3",
+      "name": "Phase 3 · static site"
+    }
+  ],
+  "edgeTypes": [
+    {
+      "id": "planned",
+      "label": "Planned",
+      "dash": "6 4",
+      "color": "#9aa0a6",
+      "width": 2,
+      "particles": 0
+    }
+  ],
+  "meta": {
+    "version": "phase 1 of 3"
+  },
+  "groups": [
+    {
+      "id": "ext",
+      "label": "External APIs",
+      "color": "lavender"
+    },
+    {
+      "id": "aws",
+      "label": "AWS account · free tier",
+      "color": "peach"
+    },
+    {
+      "id": "ingest",
+      "label": "Ingestion Lambdas · Python stdlib",
+      "color": "sky",
+      "parent": "aws"
+    },
+    {
+      "id": "site",
+      "label": "No AWS connection · planned",
+      "color": "#e6e8ea",
+      "phase": "p3"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "yt",
+      "label": "YouTube Data API v3",
+      "type": "web",
+      "sub": "API key",
+      "group": "ext",
+      "x": 1260,
+      "y": 80
+    },
+    {
+      "id": "lfm",
+      "label": "Last.fm API",
+      "type": "web",
+      "sub": "API key",
+      "group": "ext",
+      "x": 1260,
+      "y": 200
+    },
+    {
+      "id": "mb",
+      "label": "MusicBrainz API",
+      "type": "web",
+      "sub": "no key",
+      "group": "ext",
+      "x": 1260,
+      "y": 320
+    },
+    {
+      "id": "sched",
+      "label": "EventBridge Scheduler",
+      "type": "events",
+      "icon": "aws/eventbridge",
+      "sub": "daily 07:00 Mexico City",
+      "group": "aws",
+      "x": 0,
+      "y": 200
+    },
+    {
+      "id": "sfn",
+      "label": "Step Functions",
+      "type": "events",
+      "icon": "aws/stepfunctions",
+      "sub": "JSONata · Parallel",
+      "group": "aws",
+      "x": 300,
+      "y": 200
+    },
+    {
+      "id": "fyt",
+      "label": "ingest_youtube",
+      "type": "function",
+      "icon": "aws/lambda",
+      "group": "ingest",
+      "x": 620,
+      "y": 80
+    },
+    {
+      "id": "flfm",
+      "label": "ingest_lastfm",
+      "type": "function",
+      "icon": "aws/lambda",
+      "group": "ingest",
+      "x": 620,
+      "y": 200
+    },
+    {
+      "id": "fmb",
+      "label": "ingest_musicbrainz",
+      "type": "function",
+      "icon": "aws/lambda",
+      "group": "ingest",
+      "x": 620,
+      "y": 320
+    },
+    {
+      "id": "ssm",
+      "label": "SSM Parameter Store",
+      "type": "monitor",
+      "icon": "aws/systemsmanager",
+      "sub": "API keys · SecureString",
+      "group": "aws",
+      "x": 620,
+      "y": -60
+    },
+    {
+      "id": "s3",
+      "label": "S3 data bucket",
+      "type": "storage",
+      "icon": "aws/s3",
+      "sub": "raw · validated · quarantine",
+      "group": "aws",
+      "x": 620,
+      "y": 480
+    },
+    {
+      "id": "sns",
+      "label": "SNS alert topic",
+      "type": "events",
+      "icon": "aws/sns",
+      "sub": "on failure",
+      "group": "aws",
+      "x": 300,
+      "y": 400
+    },
+    {
+      "id": "budget",
+      "label": "AWS Budgets",
+      "type": "email",
+      "sub": "alert on the first cent",
+      "group": "aws",
+      "x": 300,
+      "y": 540
+    },
+    {
+      "id": "athena",
+      "label": "Athena gold",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "Iceberg tables · planned",
+      "group": "aws",
+      "x": 940,
+      "y": 480,
+      "phase": "p2"
+    },
+    {
+      "id": "export",
+      "label": "Dated export",
+      "type": "storage",
+      "sub": "site/data/",
+      "group": "site",
+      "x": 1260,
+      "y": 480
+    },
+    {
+      "id": "pages",
+      "label": "GitHub Pages",
+      "type": "web",
+      "sub": "static site",
+      "group": "site",
+      "x": 1560,
+      "y": 480
+    },
+    {
+      "id": "mail",
+      "label": "Alert email",
+      "type": "user",
+      "sub": "maintainer",
+      "x": 300,
+      "y": 720
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "sched",
+      "to": "sfn",
+      "label": "StartExecution"
+    },
+    {
+      "id": "e2",
+      "from": "sfn",
+      "to": "fyt"
+    },
+    {
+      "id": "e3",
+      "from": "sfn",
+      "to": "flfm"
+    },
+    {
+      "id": "e4",
+      "from": "sfn",
+      "to": "fmb"
+    },
+    {
+      "id": "e5",
+      "from": "fyt",
+      "to": "ssm"
+    },
+    {
+      "id": "e6",
+      "from": "flfm",
+      "to": "ssm"
+    },
+    {
+      "id": "e7",
+      "from": "fyt",
+      "to": "yt",
+      "label": "HTTPS"
+    },
+    {
+      "id": "e8",
+      "from": "flfm",
+      "to": "lfm",
+      "label": "HTTPS"
+    },
+    {
+      "id": "e9",
+      "from": "fmb",
+      "to": "mb",
+      "label": "HTTPS"
+    },
+    {
+      "id": "e10",
+      "from": "fyt",
+      "to": "s3",
+      "style": "data"
+    },
+    {
+      "id": "e11",
+      "from": "flfm",
+      "to": "s3",
+      "style": "data"
+    },
+    {
+      "id": "e12",
+      "from": "fmb",
+      "to": "s3",
+      "style": "data"
+    },
+    {
+      "id": "e13",
+      "from": "sfn",
+      "to": "sns",
+      "label": "Catch",
+      "style": "async"
+    },
+    {
+      "id": "e14",
+      "from": "sns",
+      "to": "mail",
+      "label": "email"
+    },
+    {
+      "id": "e15",
+      "from": "budget",
+      "to": "mail",
+      "label": "email"
+    },
+    {
+      "id": "e16",
+      "from": "s3",
+      "to": "athena",
+      "label": "validated/",
+      "style": "planned",
+      "phase": "p2"
+    },
+    {
+      "id": "e17",
+      "from": "athena",
+      "to": "export",
+      "label": "query",
+      "style": "planned",
+      "phase": "p3"
+    },
+    {
+      "id": "e18",
+      "from": "export",
+      "to": "pages",
+      "label": "git push",
+      "style": "planned",
+      "phase": "p3"
+    }
+  ]
+}

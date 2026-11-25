@@ -1,0 +1,61 @@
+# Comeback Thermometer architecture in Diagramon text format (https://github.com/dataengileb/diagramon).
+# Readable source; docs/architecture.diagramon.json is the same diagram with its layout: open it in Diagramon
+# and use Export > PNG to refresh docs/architecture.png. Truth: infra/template.yaml. Dashed and grey = planned.
+
+title: Comeback Thermometer
+direction: LR
+lines: elbow
+version: phase 1 of 3
+
+phase p1: "Phase 1 · ingestion"
+phase p2: "Phase 2 · Athena gold"
+phase p3: "Phase 3 · static site"
+
+type planned: "Planned" dash="6 4" color=#9aa0a6 width=2 particles=0
+
+group ext "External APIs" color=lavender {
+  yt: YouTube Data API v3 [web] "API key"
+  lfm: Last.fm API [web] "API key"
+  mb: MusicBrainz API [web] "no key"
+}
+
+group aws "AWS account · free tier" color=peach {
+  sched: EventBridge Scheduler [aws/eventbridge] "daily 07:00 Mexico City"
+  sfn: Step Functions [aws/stepfunctions] "JSONata · Parallel"
+  group ingest "Ingestion Lambdas · Python stdlib" color=sky {
+    fyt: ingest_youtube [aws/lambda]
+    flfm: ingest_lastfm [aws/lambda]
+    fmb: ingest_musicbrainz [aws/lambda]
+  }
+  ssm: SSM Parameter Store [aws/systemsmanager] "API keys · SecureString"
+  s3: S3 data bucket [aws/s3] "raw · validated · quarantine"
+  sns: SNS alert topic [aws/sns] "on failure"
+  budget: AWS Budgets [email] "alert on the first cent"
+  athena: Athena gold [aws/athena] "Iceberg tables · planned" phase=p2
+}
+
+group site "No AWS connection · planned" color=#e6e8ea phase=p3 {
+  export: Dated export [storage] "site/data/"
+  pages: GitHub Pages [web] "static site"
+}
+
+mail: Alert email [user] "maintainer"
+
+sched -> sfn : StartExecution
+sfn -> fyt
+sfn -> flfm
+sfn -> fmb
+fyt -> ssm
+flfm -> ssm
+fyt -> yt : HTTPS
+flfm -> lfm : HTTPS
+fmb -> mb : HTTPS
+fyt => s3
+flfm => s3
+fmb => s3
+sfn ~> sns : Catch
+sns -> mail : email
+budget -> mail : email
+s3 -> athena : validated/ style=planned phase=p2
+athena -> export : query style=planned phase=p3
+export -> pages : git push style=planned phase=p3

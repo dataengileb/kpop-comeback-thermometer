@@ -8,14 +8,9 @@
 
 ## Arquitectura
 
-```mermaid
-flowchart LR
-  S[EventBridge Scheduler<br/>diario 07:00 CDMX] --> SF[Step Functions]
-  SF --> Y[Lambda: YouTube] & L[Lambda: Last.fm] & M[Lambda: MusicBrainz]
-  Y & L & M --> B[(S3 raw / validated / quarantine)]
-  B --> A[Athena gold] --> E[corte fechado] --> P[GitHub Pages]
-  SF -. falla .-> N[correo SNS]
-```
+![Arquitectura: EventBridge Scheduler inicia Step Functions, que corre tres Lambdas de ingesta en paralelo; leen las llaves de API de SSM, consultan YouTube, Last.fm y MusicBrainz, y escriben en S3. Las fallas llegan por correo vía SNS. Athena gold y el sitio en GitHub Pages están planeados.](docs/architecture.png)
+
+Dibujado con [Diagramon](https://github.com/dataengileb/diagramon) a partir de [su fuente](docs/architecture.diagramon.txt); lo punteado y gris está planeado.
 
 Es la modernización de [mi versión de 2023](https://github.com/Proggleb/youtube_data_engineering_project) (EC2 + RDS + Tableau). Por qué cambió: [ADR 1](docs/adr/0001-serverless-batch-instead-of-ec2-rds.md). Alcance: [RFP](docs/rfp.md) y [SOW](docs/sow.md).
 
