@@ -71,6 +71,9 @@ Resources:
       Budget:
         BudgetType: COST
         TimeUnit: MONTHLY
+        # Net of free-tier credits: the alert fires on money that actually leaves the account.
+        CostTypes:
+          IncludeCredit: true
         BudgetLimit:
           Amount: 1
           Unit: USD

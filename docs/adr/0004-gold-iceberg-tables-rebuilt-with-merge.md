@@ -17,7 +17,7 @@ The RFP asks for views at day 1, 7 and 28 per music video, ranked within the sam
 
 ## Consequences
 - Re-running a day changes nothing: `MERGE` produces the same rows from the same silver.
-- **Cost is not exactly zero.** Athena bills USD 5 per TB, with a 10 MB minimum per query. Five queries a day add up to about 1.5 GB billed a month, roughly USD 0.01. The budget alert may fire on that cent.
+- **Billed cost is not exactly zero.** Athena bills USD 5 per TB, with a 10 MB minimum per query. Five queries a day add up to about 1.5 GB billed a month: about USD 0.01 a month, all of it Athena, covered by free-tier credits, so the out-of-pocket cost is zero. The budget counts credits, so its alert fires only on real spend.
 - Step Functions checks each Athena query about once a minute, so a run takes about 5 minutes. Standard workflows bill per state transition, so this costs nothing.
 - CloudFormation writes the Iceberg schema only on creation. To add a column, use `ALTER TABLE ... ADD COLUMNS` or give the table a new name. Gold is rebuilt from silver, so a new name costs nothing: that is how `gold_mv_launch` became `gold_video_launch` when video types were added.
 - A video deleted from YouTube stays in gold with its last known numbers.

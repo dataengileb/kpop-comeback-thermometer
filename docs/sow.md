@@ -44,7 +44,7 @@ The sources are the three in the RFP's [Data available](rfp.md#data-available). 
 | A source changes or rate-limits its API | Contracts and the quality gate stop bad data before it reaches gold |
 
 ## 7. Cost
-No fixed cost. Athena bills per query with a 10 MB minimum, which comes to about USD 0.01 a month; every other service stays inside the free tier. A budget alert emails the client at the first cent. This course project carries no fee. In a commercial SOW, each milestone would have a price, paid when it is accepted.
+No fixed cost. Athena bills per query with a 10 MB minimum: about USD 0.01 a month, all of it Athena, covered by free-tier credits, so the out-of-pocket cost is zero. Every other service stays inside the free tier. A budget alert, net of credits, emails the client at the first cent actually spent. This course project carries no fee. In a commercial SOW, each milestone would have a price, paid when it is accepted.
 
 ## 8. Change control
 Any change in scope is written down as a change request, estimated, and approved by the client before work starts. Changes so far:
