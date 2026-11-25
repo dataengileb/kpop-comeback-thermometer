@@ -20,7 +20,7 @@ Es la modernización de [mi versión de 2023](https://github.com/Proggleb/youtub
 - Los usuarios de Last.fm son sobre todo occidentales; el consumo en Corea está subrepresentado.
 - Los valores al día N solo existen para videos publicados después de la primera foto. Los comebacks anteriores se muestran, pero no se comparan.
 - Cada lanzamiento se compara solo con los del mismo artista para el mismo mercado (Corea o Japón): un MV japonés o un debut en solitario no se mide contra un sencillo principal de TWICE.
-- Solo cubre unidades y solistas con un MV oficial en los canales de las agencias. Last.fm se omite para las unidades con nombres genéricos (Aria y Sun, Moon, Neptune y Zenith de msnz), porque devolvería a otro artista, y para las que Last.fm no tiene registradas (+(KR)ystal Eyes).
+- Solo cubre unidades y solistas con un MV oficial en los canales de las agencias. Last.fm se omite para las unidades de tripleS: casi todas sus reproducciones se acreditan a tripleS y el resto se reparte entre varias formas de escribir cada unidad.
 
 ## Despliegue
 

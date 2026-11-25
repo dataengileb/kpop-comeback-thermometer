@@ -20,7 +20,7 @@ A modernization of [my 2023 version](https://github.com/Proggleb/youtube_data_en
 - Last.fm users skew toward Western listeners; Korean domestic listening is under-represented.
 - Day-N values exist only for videos released after the first snapshot. Older comebacks are shown but not ranked.
 - Each release is compared only with the same artist's releases for the same market (Korea or Japan): a Japanese MV or a solo debut is not measured against a TWICE title track.
-- Only units and soloists with an official MV on the label channels are covered. Last.fm is skipped for units with generic names (Aria, msnz's Sun, Moon, Neptune and Zenith), where it would return another artist, and for units Last.fm does not list (+(KR)ystal Eyes).
+- Only units and soloists with an official MV on the label channels are covered. Last.fm is skipped for tripleS's units: it credits almost all their plays to tripleS and splits the rest across several spellings of each unit.
 
 ## Deploy
 
