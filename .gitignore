@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 infra/.packaged.yaml
 .DS_Store
+evals/review/

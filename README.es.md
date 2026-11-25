@@ -4,7 +4,7 @@
 
 ¿Qué tan fuerte es cada nuevo lanzamiento de TWICE, NMIXX o tripleS al día 1, 7 y 28, comparado con los lanzamientos anteriores del mismo artista en el mismo mercado? Los artistas incluyen sus unidades y solistas. YouTube solo muestra totales históricos, que siempre favorecen a los éxitos viejos, así que este proyecto toma una foto diaria de los contadores.
 
-**Sitio:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/?lang=es) · **Alcance:** [RFP](docs/rfp.md) y [SOW](docs/sow.md) · **Artistas y canales:** [`artists.json`](src/config/artists.json) · **Agregar artistas o métricas:** [extending.md](docs/extending.md)
+**Sitio:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/?lang=es) · **Alcance:** [RFP](docs/rfp.md) y [SOW](docs/sow.md) · **Artistas y canales:** [`artists.json`](src/config/artists.json) · **Agregar artistas o métricas:** [extending.md](docs/extending.md) · **Evals:** [evals.md](docs/evals.md)
 
 ## Cómo funciona
 
@@ -40,4 +40,4 @@ ALERT_EMAIL=tu@correo.com ./scripts/deploy.sh
 
 Confirma el correo de SNS. La primera corrida ocurre a las 07:00 siguientes, o lánzala a mano con `aws stepfunctions start-execution --state-machine-arn <PipelineArn>`. Para actualizar el sitio, corre `./scripts/fetch_export.sh`, haz commit de `site/data/` y luego corre `./scripts/publish_site.sh`. El sitio se actualiza cada lunes, y a diario durante la primera semana de un lanzamiento, así que su fecha de datos nunca tiene más de una semana.
 
-Pruebas: `pip install -r requirements-dev.txt && pytest && cfn-lint`.
+Pruebas: `pip install -r requirements-dev.txt && pytest && cfn-lint`. Cada semana, junto con la actualización: `./scripts/eval_titles.sh` ([evals](docs/evals.md)).

@@ -4,7 +4,7 @@
 
 How strong is each new TWICE, NMIXX or tripleS launch at day 1, 7 and 28, compared with the same artist's earlier launches in the same market? Artists include their units and soloists. YouTube only shows lifetime totals, which always favour old hits, so this project snapshots the counters every day.
 
-**Site:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/) · **Scope:** [RFP](docs/rfp.md) and [SOW](docs/sow.md) · **Artists and channels:** [`artists.json`](src/config/artists.json) · **Adding artists or metrics:** [extending.md](docs/extending.md)
+**Site:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/) · **Scope:** [RFP](docs/rfp.md) and [SOW](docs/sow.md) · **Artists and channels:** [`artists.json`](src/config/artists.json) · **Adding artists or metrics:** [extending.md](docs/extending.md) · **Evals:** [evals.md](docs/evals.md)
 
 ## How it works
 
@@ -40,4 +40,4 @@ ALERT_EMAIL=you@example.com ./scripts/deploy.sh
 
 Confirm the SNS email. The first run happens at the next 07:00, or start it by hand with `aws stepfunctions start-execution --state-machine-arn <PipelineArn>`. To refresh the site, run `./scripts/fetch_export.sh`, commit `site/data/`, then run `./scripts/publish_site.sh`. The site is refreshed every Monday, and every day during a launch's first week, so its data date is never more than a week old.
 
-Tests: `pip install -r requirements-dev.txt && pytest && cfn-lint`.
+Tests: `pip install -r requirements-dev.txt && pytest && cfn-lint`. Weekly, with the refresh: `./scripts/eval_titles.sh` ([evals](docs/evals.md)).
