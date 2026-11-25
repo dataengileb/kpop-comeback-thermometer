@@ -42,6 +42,8 @@ The sources are the three in the RFP's [Data available](rfp.md#data-available). 
 | A missed day cannot be recovered later | Each source runs independently, and a failure alerts the client the same day |
 | A channel changes its title format and an MV is missed | Title patterns are tested against real titles; there is a manual list for exceptions |
 | A source changes or rate-limits its API | Contracts and the quality gate stop bad data before it reaches gold |
+| YouTube's [Developer Policies](https://developers.google.com/youtube/terms/developer-policies) (III.E.4) forbid keeping statistics fetched with an API key for more than 30 days, and forbid derived metrics; this design keeps daily view counts and ranks them | Open. Acceptable for a non-commercial course project only. A real client must either get YouTube's written approval or keep 30 days of statistics, which loses comparisons with older launches |
+| Last.fm's [API terms](https://www.last.fm/api/tos) allow non-commercial use only and require attribution | The site credits "Powered by AudioScrobbler" and links each artist to its Last.fm page; a commercial client needs a separate Last.fm agreement |
 
 ## 7. Cost
 No fixed cost. Athena bills per query with a 10 MB minimum: about USD 0.01 a month, all of it Athena, covered by free-tier credits, so the out-of-pocket cost is zero. Every other service stays inside the free tier. A budget alert, net of credits, emails the client at the first cent actually spent. This course project carries no fee. In a commercial SOW, each milestone would have a price, paid when it is accepted.
