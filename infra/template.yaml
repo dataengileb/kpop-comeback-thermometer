@@ -48,6 +48,12 @@ Resources:
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerEnforced
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-athena-results
+            Status: Enabled
+            Prefix: athena-results/
+            ExpirationInDays: 7
 
   # ---------- Alerts and cost guard ----------
   AlertTopic:
@@ -179,6 +185,150 @@ Resources:
           DATA_BUCKET: !Ref DataBucket
           MAX_INVALID_RATIO: !Ref MaxInvalidRatio
 
+  # ---------- Catalog: silver over validated/, gold as Iceberg (docs/adr/0004) ----------
+  Catalog:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: !Join ["_", !Split ["-", !Ref AWS::StackName]]
+        Description: Silver tables over validated/ and gold Iceberg tables rebuilt by the daily run.
+
+  SilverYouTube:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref Catalog
+      TableInput:
+        Name: silver_youtube_video_stats
+        TableType: EXTERNAL_TABLE
+        PartitionKeys: [{Name: snapshot_date, Type: string}]
+        Parameters:
+          classification: json
+          projection.enabled: "true"
+          projection.snapshot_date.type: date
+          projection.snapshot_date.format: yyyy-MM-dd
+          projection.snapshot_date.range: 2026-11-01,NOW
+          projection.snapshot_date.interval: "1"
+          projection.snapshot_date.interval.unit: DAYS
+          storage.location.template: !Sub s3://${DataBucket}/validated/youtube_video_stats/snapshot_date=${!snapshot_date}/
+        StorageDescriptor:
+          Location: !Sub s3://${DataBucket}/validated/youtube_video_stats/
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo: {SerializationLibrary: org.openx.data.jsonserde.JsonSerDe}
+          Columns:
+            - {Name: artist, Type: string}
+            - {Name: market, Type: string}
+            - {Name: video_id, Type: string}
+            - {Name: title, Type: string}
+            - {Name: published_at, Type: string}
+            - {Name: view_count, Type: bigint}
+            - {Name: like_count, Type: bigint}
+            - {Name: comment_count, Type: bigint}
+
+  SilverLastfmArtist:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref Catalog
+      TableInput:
+        Name: silver_lastfm_artist_stats
+        TableType: EXTERNAL_TABLE
+        PartitionKeys: [{Name: snapshot_date, Type: string}]
+        Parameters:
+          classification: json
+          projection.enabled: "true"
+          projection.snapshot_date.type: date
+          projection.snapshot_date.format: yyyy-MM-dd
+          projection.snapshot_date.range: 2026-11-01,NOW
+          projection.snapshot_date.interval: "1"
+          projection.snapshot_date.interval.unit: DAYS
+          storage.location.template: !Sub s3://${DataBucket}/validated/lastfm_artist_stats/snapshot_date=${!snapshot_date}/
+        StorageDescriptor:
+          Location: !Sub s3://${DataBucket}/validated/lastfm_artist_stats/
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo: {SerializationLibrary: org.openx.data.jsonserde.JsonSerDe}
+          Columns:
+            - {Name: artist, Type: string}
+            - {Name: artist_mbid, Type: string}
+            - {Name: listeners, Type: bigint}
+            - {Name: playcount, Type: bigint}
+
+  GoldMvLaunch:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref Catalog
+      OpenTableFormatInput:
+        IcebergInput:
+          MetadataOperation: CREATE
+          Version: "2"
+      TableInput:
+        Name: gold_mv_launch
+        TableType: EXTERNAL_TABLE
+        StorageDescriptor:
+          Location: !Sub s3://${DataBucket}/gold/mv_launch/
+          Columns:
+            - {Name: video_id, Type: string}
+            - {Name: artist, Type: string}
+            - {Name: market, Type: string}
+            - {Name: title, Type: string}
+            - {Name: song_key, Type: string}
+            - {Name: published_at, Type: timestamp}
+            - {Name: first_snapshot_date, Type: date}
+            - {Name: last_snapshot_date, Type: date}
+            - {Name: views_latest, Type: bigint}
+            - {Name: likes_latest, Type: bigint}
+            - {Name: comments_latest, Type: bigint}
+            - {Name: comparable, Type: boolean}
+            - {Name: is_duplicate, Type: boolean}
+            - {Name: views_d1, Type: bigint}
+            - {Name: views_d7, Type: bigint}
+            - {Name: views_d28, Type: bigint}
+            - {Name: rank_d1, Type: bigint}
+            - {Name: rank_d7, Type: bigint}
+            - {Name: rank_d28, Type: bigint}
+            - {Name: compared_d1, Type: bigint}
+            - {Name: compared_d7, Type: bigint}
+            - {Name: compared_d28, Type: bigint}
+
+  GoldArtistDaily:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref Catalog
+      OpenTableFormatInput:
+        IcebergInput:
+          MetadataOperation: CREATE
+          Version: "2"
+      TableInput:
+        Name: gold_artist_daily
+        TableType: EXTERNAL_TABLE
+        StorageDescriptor:
+          Location: !Sub s3://${DataBucket}/gold/artist_daily/
+          Columns:
+            - {Name: artist, Type: string}
+            - {Name: snapshot_date, Type: date}
+            - {Name: listeners, Type: bigint}
+            - {Name: playcount, Type: bigint}
+            - {Name: listeners_change, Type: bigint}
+            - {Name: playcount_change, Type: bigint}
+
+  WorkGroup:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: !Ref AWS::StackName
+      RecursiveDeleteOption: true
+      WorkGroupConfiguration:
+        EnforceWorkGroupConfiguration: true
+        PublishCloudWatchMetricsEnabled: false
+        BytesScannedCutoffPerQuery: 1073741824 # 1 GB; a run scans a few MB
+        EngineVersion: {SelectedEngineVersion: Athena engine version 3}
+        ResultConfiguration:
+          OutputLocation: !Sub s3://${DataBucket}/athena-results/
+
   # ---------- Orchestration ----------
   PipelineRole:
     Type: AWS::IAM::Role
@@ -203,6 +353,29 @@ Resources:
               - Effect: Allow
                 Action: sns:Publish
                 Resource: !Ref AlertTopic
+              - Effect: Allow
+                Action: [athena:StartQueryExecution, athena:GetQueryExecution, athena:GetQueryResults, athena:StopQueryExecution]
+                Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${WorkGroup}
+              - Effect: Allow
+                Action: [glue:GetDatabase, glue:GetTable, glue:GetTables, glue:GetPartition, glue:GetPartitions, glue:UpdateTable]
+                Resource:
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${Catalog}
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${Catalog}/*
+              - Effect: Allow
+                Action: [s3:GetBucketLocation, s3:ListBucket]
+                Resource: !GetAtt DataBucket.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  - !Sub ${DataBucket.Arn}/validated/*
+                  - !Sub ${DataBucket.Arn}/gold/*
+                  - !Sub ${DataBucket.Arn}/athena-results/*
+              - Effect: Allow
+                Action: [s3:PutObject, s3:DeleteObject, s3:AbortMultipartUpload]
+                Resource:
+                  - !Sub ${DataBucket.Arn}/gold/*
+                  - !Sub ${DataBucket.Arn}/athena-results/*
 
   Pipeline:
     Type: AWS::StepFunctions::StateMachine
@@ -215,10 +388,13 @@ Resources:
         LastfmFn: !GetAtt IngestLastfm.Arn
         MusicBrainzFn: !GetAtt IngestMusicBrainz.Arn
         AlertTopic: !Ref AlertTopic
+        Database: !Ref Catalog
+        WorkGroup: !Ref WorkGroup
       Definition:
         Comment: >-
           Daily snapshot. A re-run on the same UTC day overwrites that day; past days cannot be re-taken.
           Each source catches its own failure, so one broken API never cancels the other two.
+          Then the gold tables are rebuilt with MERGE and checked; any failure emails the alert.
         QueryLanguage: JSONata
         StartAt: Ingest
         States:
@@ -297,7 +473,208 @@ Resources:
             Choices:
               - Condition: "{% $exists($states.input.failed) %}"
                 Next: NotifyFailure
-            Default: Done
+            Default: BuildMvLaunch
+          BuildMvLaunch:
+            Type: Task
+            Resource: arn:aws:states:::athena:startQueryExecution.sync
+            Catch:
+              - ErrorEquals: [States.ALL]
+                Next: NotifyFailure
+                Output: "{% $states.errorOutput %}"
+            Arguments:
+              WorkGroup: "${WorkGroup}"
+              QueryExecutionContext: {Database: "${Database}"}
+              QueryString: |
+                -- One row per music video: views at day 1, 7 and 28 and the rank among the same
+                -- artist's comparable videos for the same market. Rebuilt from all of silver each run.
+                MERGE INTO gold_mv_launch AS t
+                USING (
+                  WITH aged AS (
+                    SELECT video_id, artist, market, title, view_count, like_count, comment_count,
+                      CAST(from_iso8601_timestamp(published_at) AT TIME ZONE 'UTC' AS timestamp(6)) AS published_at,
+                      date(snapshot_date) AS snapshot_date,
+                      date_diff('day', date(from_iso8601_timestamp(published_at)), date(snapshot_date)) AS age_days
+                    FROM silver_youtube_video_stats
+                  ),
+                  videos AS (
+                    SELECT video_id,
+                      max_by(artist, snapshot_date) AS artist,
+                      max_by(market, snapshot_date) AS market,
+                      max_by(title, snapshot_date) AS title,
+                      max(published_at) AS published_at,
+                      min(snapshot_date) AS first_snapshot_date,
+                      max(snapshot_date) AS last_snapshot_date,
+                      max_by(view_count, snapshot_date) AS views_latest,
+                      max_by(like_count, snapshot_date) AS likes_latest,
+                      max_by(comment_count, snapshot_date) AS comments_latest,
+                      -- Comparable: the launch was observed from day 1 (docs/adr/0004).
+                      min(age_days) <= 1 AS comparable,
+                      -- Day N: the snapshot N days after release, else N+1, else N-1.
+                      min_by(view_count, abs(age_days - 1) * 2 + IF(age_days < 1, 1, 0))
+                        FILTER (WHERE abs(age_days - 1) <= 1) AS d1,
+                      min_by(view_count, abs(age_days - 7) * 2 + IF(age_days < 7, 1, 0))
+                        FILTER (WHERE abs(age_days - 7) <= 1) AS d7,
+                      min_by(view_count, abs(age_days - 28) * 2 + IF(age_days < 28, 1, 0))
+                        FILTER (WHERE abs(age_days - 28) <= 1) AS d28
+                    FROM aged
+                    GROUP BY video_id
+                  ),
+                  flagged AS (
+                    SELECT *,
+                      -- The same song uploaded twice by the same artist for the same market: keep the most viewed.
+                      row_number() OVER (PARTITION BY artist, market, song_key ORDER BY views_latest DESC, video_id) > 1 AS is_duplicate,
+                      IF(comparable, d1) AS views_d1,
+                      IF(comparable, d7) AS views_d7,
+                      IF(comparable, d28) AS views_d28
+                    FROM (
+                      SELECT *, lower(regexp_replace(coalesce(regexp_extract(title, '["“''‘「『](.+)["”''’」』]', 1), title),
+                                                     '[\s\p{P}\p{S}]', '')) AS song_key
+                      FROM videos
+                    )
+                  )
+                  SELECT video_id, artist, market, title, song_key, published_at,
+                    first_snapshot_date, last_snapshot_date, views_latest, likes_latest, comments_latest,
+                    comparable, is_duplicate, views_d1, views_d7, views_d28,
+                    IF(views_d1 IS NOT NULL AND NOT is_duplicate,
+                       rank() OVER (PARTITION BY artist, market, views_d1 IS NOT NULL AND NOT is_duplicate ORDER BY views_d1 DESC)) AS rank_d1,
+                    IF(views_d1 IS NOT NULL AND NOT is_duplicate,
+                       count(*) OVER (PARTITION BY artist, market, views_d1 IS NOT NULL AND NOT is_duplicate)) AS compared_d1,
+                    IF(views_d7 IS NOT NULL AND NOT is_duplicate,
+                       rank() OVER (PARTITION BY artist, market, views_d7 IS NOT NULL AND NOT is_duplicate ORDER BY views_d7 DESC)) AS rank_d7,
+                    IF(views_d7 IS NOT NULL AND NOT is_duplicate,
+                       count(*) OVER (PARTITION BY artist, market, views_d7 IS NOT NULL AND NOT is_duplicate)) AS compared_d7,
+                    IF(views_d28 IS NOT NULL AND NOT is_duplicate,
+                       rank() OVER (PARTITION BY artist, market, views_d28 IS NOT NULL AND NOT is_duplicate ORDER BY views_d28 DESC)) AS rank_d28,
+                    IF(views_d28 IS NOT NULL AND NOT is_duplicate,
+                       count(*) OVER (PARTITION BY artist, market, views_d28 IS NOT NULL AND NOT is_duplicate)) AS compared_d28
+                  FROM flagged
+                ) AS s
+                ON t.video_id = s.video_id
+                WHEN MATCHED THEN UPDATE SET
+                  artist = s.artist,
+                  market = s.market,
+                  title = s.title,
+                  song_key = s.song_key,
+                  published_at = s.published_at,
+                  first_snapshot_date = s.first_snapshot_date,
+                  last_snapshot_date = s.last_snapshot_date,
+                  views_latest = s.views_latest,
+                  likes_latest = s.likes_latest,
+                  comments_latest = s.comments_latest,
+                  comparable = s.comparable,
+                  is_duplicate = s.is_duplicate,
+                  views_d1 = s.views_d1,
+                  views_d7 = s.views_d7,
+                  views_d28 = s.views_d28,
+                  rank_d1 = s.rank_d1,
+                  rank_d7 = s.rank_d7,
+                  rank_d28 = s.rank_d28,
+                  compared_d1 = s.compared_d1,
+                  compared_d7 = s.compared_d7,
+                  compared_d28 = s.compared_d28
+                WHEN NOT MATCHED THEN INSERT (video_id, artist, market, title, song_key, published_at, first_snapshot_date, last_snapshot_date, views_latest, likes_latest, comments_latest, comparable, is_duplicate, views_d1, views_d7, views_d28, rank_d1, rank_d7, rank_d28, compared_d1, compared_d7, compared_d28)
+                VALUES (s.video_id, s.artist, s.market, s.title, s.song_key, s.published_at, s.first_snapshot_date, s.last_snapshot_date, s.views_latest, s.likes_latest, s.comments_latest, s.comparable, s.is_duplicate, s.views_d1, s.views_d7, s.views_d28, s.rank_d1, s.rank_d7, s.rank_d28, s.compared_d1, s.compared_d7, s.compared_d28)
+            Next: BuildArtistDaily
+          BuildArtistDaily:
+            Type: Task
+            Resource: arn:aws:states:::athena:startQueryExecution.sync
+            Catch:
+              - ErrorEquals: [States.ALL]
+                Next: NotifyFailure
+                Output: "{% $states.errorOutput %}"
+            Arguments:
+              WorkGroup: "${WorkGroup}"
+              QueryExecutionContext: {Database: "${Database}"}
+              QueryString: |
+                -- Last.fm listeners and scrobbles per artist and day, with the change since the previous snapshot.
+                MERGE INTO gold_artist_daily AS t
+                USING (
+                  SELECT artist, date(snapshot_date) AS snapshot_date, listeners, playcount,
+                    listeners - lag(listeners) OVER (PARTITION BY artist ORDER BY snapshot_date) AS listeners_change,
+                    playcount - lag(playcount) OVER (PARTITION BY artist ORDER BY snapshot_date) AS playcount_change
+                  FROM silver_lastfm_artist_stats
+                ) AS s
+                ON t.artist = s.artist AND t.snapshot_date = s.snapshot_date
+                WHEN MATCHED THEN UPDATE SET
+                  listeners = s.listeners, playcount = s.playcount,
+                  listeners_change = s.listeners_change, playcount_change = s.playcount_change
+                WHEN NOT MATCHED THEN INSERT (artist, snapshot_date, listeners, playcount, listeners_change, playcount_change)
+                VALUES (s.artist, s.snapshot_date, s.listeners, s.playcount, s.listeners_change, s.playcount_change)
+            Next: CheckGold
+          CheckGold:
+            Type: Task
+            Resource: arn:aws:states:::athena:startQueryExecution.sync
+            Catch:
+              - ErrorEquals: [States.ALL]
+                Next: NotifyFailure
+                Output: "{% $states.errorOutput %}"
+            Arguments:
+              WorkGroup: "${WorkGroup}"
+              QueryExecutionContext: {Database: "${Database}"}
+              QueryString: |
+                -- Data tests on gold. Each row returned is a failed check.
+                SELECT check_name, failures FROM (
+                  SELECT 'one row per video' AS check_name, count(*) - count(DISTINCT video_id) AS failures
+                  FROM gold_mv_launch
+                  UNION ALL
+                  SELECT 'every silver video is in gold',
+                    (SELECT count(DISTINCT video_id) FROM silver_youtube_video_stats) - (SELECT count(*) FROM gold_mv_launch)
+                  UNION ALL
+                  SELECT 'day-N values only for comparable videos', count(*)
+                  FROM gold_mv_launch WHERE NOT comparable AND coalesce(views_d1, views_d7, views_d28) IS NOT NULL
+                  UNION ALL
+                  SELECT 'only comparable originals are ranked', count(*)
+                  FROM gold_mv_launch WHERE coalesce(rank_d1, rank_d7, rank_d28) IS NOT NULL AND (NOT comparable OR is_duplicate)
+                  UNION ALL
+                  SELECT 'one row per artist and day', count(*) - count(DISTINCT artist || '|' || CAST(snapshot_date AS varchar))
+                  FROM gold_artist_daily
+                )
+                WHERE failures <> 0
+            Next: ReadChecks
+          ReadChecks:
+            Type: Task
+            Resource: arn:aws:states:::athena:getQueryResults
+            Arguments:
+              QueryExecutionId: "{% $states.input.QueryExecution.QueryExecutionId %}"
+            Output: "{% $states.result.ResultSet.Rows %}"
+            Catch:
+              - ErrorEquals: [States.ALL]
+                Next: NotifyFailure
+                Output: "{% $states.errorOutput %}"
+            Next: ChecksPassed
+          ChecksPassed:
+            Type: Choice
+            Choices:
+              # Row 1 is the header, so more than one row means a check failed.
+              - Condition: "{% $count($states.input) > 1 %}"
+                Output: "{% {'gold_checks_failed': $states.input.Data.VarCharValue} %}"
+                Next: NotifyFailure
+            Default: VacuumMvLaunch
+          VacuumMvLaunch:
+            Type: Task
+            Resource: arn:aws:states:::athena:startQueryExecution.sync
+            Catch:
+              - ErrorEquals: [States.ALL]
+                Next: NotifyFailure
+                Output: "{% $states.errorOutput %}"
+            Arguments:
+              WorkGroup: "${WorkGroup}"
+              QueryExecutionContext: {Database: "${Database}"}
+              # VACUUM expires old Iceberg snapshots. Athena rejects a comment before it.
+              QueryString: VACUUM gold_mv_launch
+            Next: VacuumArtistDaily
+          VacuumArtistDaily:
+            Type: Task
+            Resource: arn:aws:states:::athena:startQueryExecution.sync
+            Catch:
+              - ErrorEquals: [States.ALL]
+                Next: NotifyFailure
+                Output: "{% $states.errorOutput %}"
+            Arguments:
+              WorkGroup: "${WorkGroup}"
+              QueryExecutionContext: {Database: "${Database}"}
+              QueryString: VACUUM gold_artist_daily
+            Next: Done
           NotifyFailure:
             Type: Task
             Resource: arn:aws:states:::sns:publish
@@ -346,3 +723,7 @@ Outputs:
     Value: !Ref DataBucket
   PipelineArn:
     Value: !Ref Pipeline
+  AthenaDatabase:
+    Value: !Ref Catalog
+  AthenaWorkGroup:
+    Value: !Ref WorkGroup
