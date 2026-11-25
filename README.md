@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-How strong was the start of each comeback by TWICE, NMIXX and tripleS, their units and soloists, compared with the artist's previous ones? YouTube only shows lifetime totals, which always favour old hits. This project snapshots the counters every day, so a launch can be judged at day 1, 7 and 28.
+How strong is each new TWICE, NMIXX or tripleS launch at day 1, 7 and 28, compared with the same artist's earlier launches in the same market? Artists include their units and soloists. YouTube only shows lifetime totals, which always favour old hits, so this project snapshots the counters every day.
 
 **Site:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/) · **Scope:** [RFP](docs/rfp.md) and [SOW](docs/sow.md) · **Artists and channels:** [`artists.json`](src/config/artists.json) · **Adding artists or metrics:** [extending.md](docs/extending.md)
 

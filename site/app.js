@@ -5,7 +5,7 @@
 const TEXT = {
   en: {
     title: "Comeback Thermometer",
-    question: "How strong was the start of each comeback by TWICE, NMIXX and tripleS, their units and soloists, compared with the artist's previous ones?",
+    question: "How strong is each new TWICE, NMIXX or tripleS launch at day 1, 7 and 28, compared with the same artist's earlier launches in the same market?",
     asof: "Data as of",
     tab_explore: "Explore an artist",
     tab_compare: "Compare two",
@@ -90,7 +90,7 @@ const TEXT = {
   },
   es: {
     title: "Termómetro de comebacks",
-    question: "¿Qué tan fuerte arrancó cada comeback de TWICE, NMIXX y tripleS, sus unidades y solistas, comparado con los anteriores del mismo artista?",
+    question: "¿Qué tan fuerte es cada nuevo lanzamiento de TWICE, NMIXX o tripleS al día 1, 7 y 28, comparado con los lanzamientos anteriores del mismo artista en el mismo mercado?",
     asof: "Datos al",
     tab_explore: "Explorar un artista",
     tab_compare: "Comparar dos",
