@@ -19,17 +19,17 @@ def _sql(state: str) -> str:
     return STATES[state]["Arguments"]["QueryString"]
 
 
-@pytest.mark.parametrize("state, table", [("BuildMvLaunch", "GoldMvLaunch"), ("BuildArtistDaily", "GoldArtistDaily")])
+@pytest.mark.parametrize("state, table", [("BuildVideoLaunch", "GoldVideoLaunch"), ("BuildArtistDaily", "GoldArtistDaily")])
 def test_merge_inserts_every_gold_column(state, table):
     insert = re.search(r"INSERT \(([^)]*)\)", _sql(state)).group(1)
     assert [c.strip() for c in insert.split(",")] == _columns(table)
 
 
 def test_merge_updates_every_non_key_column():
-    updated = re.findall(r"^\s*(\w+) = s\.\1", _sql("BuildMvLaunch"), re.MULTILINE)
-    assert updated == _columns("GoldMvLaunch")[1:]
+    updated = re.findall(r"^\s*(\w+) = s\.\1", _sql("BuildVideoLaunch"), re.MULTILINE)
+    assert updated == _columns("GoldVideoLaunch")[1:]
 
 
 def test_gold_tables_are_iceberg():
-    for logical_id in ("GoldMvLaunch", "GoldArtistDaily"):
+    for logical_id in ("GoldVideoLaunch", "GoldArtistDaily"):
         assert RESOURCES[logical_id]["Properties"]["OpenTableFormatInput"]["IcebergInput"]["MetadataOperation"] == "CREATE"

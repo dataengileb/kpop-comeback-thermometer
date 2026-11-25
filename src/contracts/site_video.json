@@ -1,13 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "site_video",
-  "description": "One music video as the static site receives it. Source: gold_mv_launch, via export_site.",
+  "description": "One music video as the static site receives it. Source: gold_video_launch, via export_site.",
   "type": "object",
-  "required": ["video_id", "artist", "market", "title", "published_at", "first_snapshot_date", "last_snapshot_date", "views_latest", "comparable", "is_duplicate"],
+  "required": ["video_id", "artist", "market", "video_type", "compare_with", "title", "published_at", "first_snapshot_date", "last_snapshot_date", "views_latest", "comparable", "is_duplicate"],
   "properties": {
     "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{11}$"},
     "artist": {"type": "string", "enum": ["twice", "misamo", "nayeon", "jihyo", "chaeyoung", "tzuyu", "nmixx", "triples", "triples-aaa", "triples-kre", "triples-lovelution", "triples-evolution", "triples-aria", "triples-vv", "triples-infinity", "triples-msnz-sun", "triples-msnz-moon", "triples-msnz-neptune", "triples-msnz-zenith"]},
     "market": {"type": "string", "enum": ["kr", "jp"]},
+    "video_type": {"type": "string", "enum": ["mv", "visual_clip"]},
+    "compare_with": {"type": "string", "enum": ["release"]},
     "title": {"type": "string", "minLength": 1},
     "published_at": {"type": "string", "format": "date-time"},
     "first_snapshot_date": {"type": "string", "format": "date"},

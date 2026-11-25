@@ -13,10 +13,10 @@ from common import contracts, storage
 from common.run import QualityGateError, load_artists, snapshot_date
 
 VIDEOS_SQL = """
-SELECT video_id, artist, market, title, published_at, first_snapshot_date, last_snapshot_date,
-       views_latest, comparable, is_duplicate, views_d1, views_d7, views_d28,
+SELECT video_id, artist, market, video_type, compare_with, title, published_at, first_snapshot_date,
+       last_snapshot_date, views_latest, comparable, is_duplicate, views_d1, views_d7, views_d28,
        rank_d1, rank_d7, rank_d28, compared_d1, compared_d7, compared_d28
-FROM gold_mv_launch
+FROM gold_video_launch
 ORDER BY artist, market, published_at DESC
 """
 

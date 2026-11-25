@@ -52,6 +52,13 @@ def test_contract_artist_enum_matches_config(path: Path):
     assert sorted(contract["properties"]["artist"]["enum"]) == slugs
 
 
+def test_youtube_contract_knows_every_video_type():
+    types = load_config()["video_types"]
+    props = load_contract("youtube_video_stats")["properties"]
+    assert props["video_type"]["enum"] == [t["type"] for t in types]
+    assert props["compare_with"]["enum"] == sorted({t["compare_with"] for t in types})
+
+
 def test_config_is_consistent():
     config = load_config()
     handles = {c["handle"] for c in config["channels"]}

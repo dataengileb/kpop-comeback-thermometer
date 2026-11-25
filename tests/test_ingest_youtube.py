@@ -2,18 +2,26 @@ import pytest
 
 from common.contracts import load_contract, split_valid
 from common.run import load_artists, load_config
-from ingest_youtube.handler import match_music_videos, to_records
+from ingest_youtube.handler import match_videos, to_records
 
 
 def _artists_on(handle):
     return [a for a in load_artists() if handle in a["channels"]]
 
 
+def _match(pages, handle, market):
+    config = load_config()
+    return match_videos(pages, _artists_on(handle), market, config["video_types"], config["artists"])
+
+
+MV = {"video_type": "mv", "compare_with": "release"}
+
+
 def test_only_official_mvs_of_configured_artists_match(fixture):
-    matches = match_music_videos([fixture("youtube_uploads_page.json")], _artists_on("@JYPEntertainment"), "kr")
+    matches = _match([fixture("youtube_uploads_page.json")], "@JYPEntertainment", "kr")
     assert matches == {
-        "aaaaaaaaaa1": {"artist": "twice", "market": "kr"},
-        "bbbbbbbbbb1": {"artist": "nmixx", "market": "kr"},
+        "aaaaaaaaaa1": {"artist": "twice", "market": "kr", **MV},
+        "bbbbbbbbbb1": {"artist": "nmixx", "market": "kr", **MV},
     }
 
 
@@ -57,12 +65,15 @@ def test_only_official_mvs_of_configured_artists_match(fixture):
         ("@triplescosmos", "tripleS(트리플에스) EVOLution ‘Invincible’ MV", ("triples-evolution", "kr")),
         ("@triplescosmos", "tripleS(트리플에스) Aria ‘Door’ MV", ("triples-aria", "kr")),
         ("@triplescosmos", "tripleS Glow (트리플에스) '내적 댄스 (Inner Dance)' Official Performance", None),
+        ("@triplescosmos", "tripleS(트리플에스) sun ‘DNA’ Special Visual Clip", ("triples-msnz-sun", "kr")),
+        ("@triplescosmos", "tripleS(트리플에스) zenith ‘See You’ Special Visual Clip", ("triples-msnz-zenith", "kr")),
+        ("@triplescosmos", "zenith 러닝 크루 결성 | tripleS(트리플에스) ‘Baby Flower’ MV Behind", None),
     ],
 )
 def test_real_channel_titles(handle, title, expected):
     market = next(c["market"] for c in load_config()["channels"] if c["handle"] == handle)
     page = {"items": [{"snippet": {"title": title, "resourceId": {"videoId": "x" * 11}}}]}
-    match = match_music_videos([page], _artists_on(handle), market).get("x" * 11)
+    match = _match([page], handle, market).get("x" * 11)
     assert (None if match is None else (match["artist"], match["market"])) == expected
 
 
@@ -70,12 +81,18 @@ def test_listed_video_ids_match_even_when_the_title_does_not():
     title = 'TWICE Pre-release english track "MOONLIGHT SUNRISE" M/V'
     page = {"items": [{"snippet": {"title": title, "resourceId": {"videoId": "cKlEE_EYuNM"}}},
                       {"snippet": {"title": title + " Teaser 1", "resourceId": {"videoId": "2P997RmZRU4"}}}]}
-    matches = match_music_videos([page], _artists_on("@JYPEntertainment"), "kr")
-    assert matches == {"cKlEE_EYuNM": {"artist": "twice", "market": "kr"}}
+    matches = _match([page], "@JYPEntertainment", "kr")
+    assert matches == {"cKlEE_EYuNM": {"artist": "twice", "market": "kr", **MV}}
+
+
+def test_video_type_comes_from_the_title_ending():
+    page = {"items": [{"snippet": {"title": "tripleS(트리플에스) moon ‘Dream Dress’ Special Visual Clip",
+                                   "resourceId": {"videoId": "x" * 11}}}]}
+    assert _match([page], "@triplescosmos", "kr")["x" * 11]["video_type"] == "visual_clip"
 
 
 def test_records_cast_counters_and_keep_hidden_likes_as_null(fixture):
-    matches = {"aaaaaaaaaa1": {"artist": "twice", "market": "kr"}, "bbbbbbbbbb1": {"artist": "nmixx", "market": "kr"}}
+    matches = {"aaaaaaaaaa1": {"artist": "twice", "market": "kr", **MV}, "bbbbbbbbbb1": {"artist": "nmixx", "market": "kr", **MV}}
     records = to_records([fixture("youtube_videos_page.json")], matches, "2026-11-24")
     assert records[0]["view_count"] == 61234567
     assert records[1]["like_count"] is None
