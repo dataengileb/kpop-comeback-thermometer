@@ -8,9 +8,9 @@
 
 ## Arquitectura
 
-![Arquitectura: EventBridge Scheduler inicia Step Functions, que corre tres Lambdas de ingesta en paralelo; leen las llaves de API de SSM, consultan YouTube, Last.fm y MusicBrainz, y escriben en S3. Las fallas llegan por correo vía SNS. Athena gold y el sitio en GitHub Pages están planeados.](docs/architecture.png)
+![Arquitectura: EventBridge Scheduler inicia Step Functions cada día. Corre tres Lambdas de ingesta en paralelo, que leen las llaves de API de SSM, consultan YouTube, Last.fm y MusicBrainz, y escriben en S3. Después Athena hace MERGE de los datos validados en dos tablas Iceberg gold a través del catálogo de Glue, las revisa y las compacta con VACUUM. Las fallas de la corrida o de las revisiones llegan por correo vía SNS, y AWS Budgets avisa desde el primer centavo. El corte fechado y el sitio en GitHub Pages están planeados.](docs/architecture.png)
 
-Dibujado con [Diagramon](https://github.com/dataengileb/diagramon) a partir de [su fuente](docs/architecture.diagramon.txt); lo punteado y gris está planeado.
+Dibujado con [Diagramon](https://github.com/dataengileb/diagramon) a partir de [su fuente](docs/architecture.diagramon.txt); lo punteado y gris (fase 3) está planeado.
 
 Es la modernización de [mi versión de 2023](https://github.com/Proggleb/youtube_data_engineering_project) (EC2 + RDS + Tableau). Por qué cambió: [ADR 1](docs/adr/0001-serverless-batch-instead-of-ec2-rds.md). Alcance: [RFP](docs/rfp.md) y [SOW](docs/sow.md).
 

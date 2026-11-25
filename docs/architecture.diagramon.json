@@ -11,7 +11,7 @@
     },
     {
       "id": "p2",
-      "name": "Phase 2 · Athena gold"
+      "name": "Phase 2 · gold in Athena"
     },
     {
       "id": "p3",
@@ -23,13 +23,13 @@
       "id": "planned",
       "label": "Planned",
       "dash": "6 4",
-      "color": "#9aa0a6",
+      "color": "#8b93a1",
       "width": 2,
       "particles": 0
     }
   ],
   "meta": {
-    "version": "phase 1 of 3"
+    "version": "phase 2 of 3"
   },
   "groups": [
     {
@@ -51,7 +51,7 @@
     {
       "id": "site",
       "label": "No AWS connection · planned",
-      "color": "#e6e8ea",
+      "color": "#8b93a1",
       "phase": "p3"
     }
   ],
@@ -98,7 +98,7 @@
       "label": "Step Functions",
       "type": "events",
       "icon": "aws/stepfunctions",
-      "sub": "JSONata · Parallel",
+      "sub": "JSONata · ingest, then gold",
       "group": "aws",
       "x": 300,
       "y": 200
@@ -151,11 +151,44 @@
       "y": 480
     },
     {
+      "id": "athena",
+      "label": "Athena workgroup",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "MERGE · checks · VACUUM",
+      "group": "aws",
+      "x": 620,
+      "y": 640,
+      "phase": "p2"
+    },
+    {
+      "id": "glue",
+      "label": "Glue Data Catalog",
+      "type": "analytics",
+      "icon": "aws/glue",
+      "sub": "silver tables · projection",
+      "group": "aws",
+      "x": 940,
+      "y": 480,
+      "phase": "p2"
+    },
+    {
+      "id": "gold",
+      "label": "Gold Iceberg tables",
+      "type": "storage",
+      "icon": "aws/s3",
+      "sub": "mv_launch · artist_daily",
+      "group": "aws",
+      "x": 940,
+      "y": 640,
+      "phase": "p2"
+    },
+    {
       "id": "sns",
       "label": "SNS alert topic",
       "type": "events",
       "icon": "aws/sns",
-      "sub": "on failure",
+      "sub": "failed run or check",
       "group": "aws",
       "x": 300,
       "y": 400
@@ -166,19 +199,8 @@
       "type": "email",
       "sub": "alert on the first cent",
       "group": "aws",
-      "x": 300,
+      "x": 0,
       "y": 540
-    },
-    {
-      "id": "athena",
-      "label": "Athena gold",
-      "type": "analytics",
-      "icon": "aws/athena",
-      "sub": "Iceberg tables · planned",
-      "group": "aws",
-      "x": 940,
-      "y": 480,
-      "phase": "p2"
     },
     {
       "id": "export",
@@ -187,7 +209,7 @@
       "sub": "site/data/",
       "group": "site",
       "x": 1260,
-      "y": 480
+      "y": 640
     },
     {
       "id": "pages",
@@ -196,15 +218,15 @@
       "sub": "static site",
       "group": "site",
       "x": 1560,
-      "y": 480
+      "y": 640
     },
     {
       "id": "mail",
       "label": "Alert email",
       "type": "user",
       "sub": "maintainer",
-      "x": 300,
-      "y": 720
+      "x": 0,
+      "y": 800
     }
   ],
   "edges": [
@@ -278,40 +300,62 @@
     {
       "id": "e13",
       "from": "sfn",
+      "to": "athena",
+      "label": "queries",
+      "phase": "p2"
+    },
+    {
+      "id": "e14",
+      "from": "athena",
+      "to": "glue",
+      "label": "catalog",
+      "phase": "p2"
+    },
+    {
+      "id": "e15",
+      "from": "athena",
+      "to": "s3",
+      "label": "read validated/, write athena-results/",
+      "style": "data",
+      "phase": "p2"
+    },
+    {
+      "id": "e16",
+      "from": "athena",
+      "to": "gold",
+      "label": "MERGE",
+      "style": "data",
+      "phase": "p2"
+    },
+    {
+      "id": "e17",
+      "from": "sfn",
       "to": "sns",
       "label": "Catch",
       "style": "async"
     },
     {
-      "id": "e14",
+      "id": "e18",
       "from": "sns",
       "to": "mail",
       "label": "email"
     },
     {
-      "id": "e15",
+      "id": "e19",
       "from": "budget",
       "to": "mail",
       "label": "email"
     },
     {
-      "id": "e16",
-      "from": "s3",
-      "to": "athena",
-      "label": "validated/",
-      "style": "planned",
-      "phase": "p2"
-    },
-    {
-      "id": "e17",
-      "from": "athena",
+      "id": "e20",
+      "from": "gold",
       "to": "export",
       "label": "query",
       "style": "planned",
       "phase": "p3"
     },
     {
-      "id": "e18",
+      "id": "e21",
       "from": "export",
       "to": "pages",
       "label": "git push",
