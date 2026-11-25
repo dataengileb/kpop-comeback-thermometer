@@ -1,7 +1,7 @@
 # RFP: Comeback Thermometer
 
 ## Client
-The marketing team of a K-pop label's Mexican distributor, and the fan clubs they work with. They plan promotion (ads, listening parties, streaming drives) for the launch week of each comeback by TWICE, NMIXX and tripleS, in Korea and Japan, and of TWICE's unit MISAMO and the soloists NAYEON, JIHYO, CHAEYOUNG and TZUYU.
+The marketing team of a K-pop label's Mexican distributor, and the fan clubs they work with. They plan promotion (ads, listening parties, streaming drives) for the launch week of each comeback by TWICE, NMIXX and tripleS, in Korea and Japan, of their units (TWICE's MISAMO and tripleS's, from Acid Angel from Asia to msnz) and of the soloists NAYEON, JIHYO, CHAEYOUNG and TZUYU.
 
 ## Problem
 Today the team judges a comeback by the total views shown on YouTube. Totals favour old videos, so a new release always looks weak next to a hit from 2019, and the team cannot tell on day 3 whether a launch is ahead of or behind the artist's usual pace.
@@ -32,4 +32,4 @@ None of these sources publishes history: they only return today's totals. Daily 
 Batch only, zero cost, AWS only, CloudFormation, public static site.
 
 ## Out of scope
-Spotify (its API no longer returns popularity or followers to new apps), sub-units and solo artists not named above, chart positions, and any prediction of future views.
+Spotify (its API no longer returns popularity or followers to new apps), units and solo artists without an official MV on the configured channels, chart positions, and any prediction of future views.

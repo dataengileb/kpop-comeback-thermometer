@@ -43,8 +43,20 @@ def test_only_official_mvs_of_configured_artists_match(fixture):
         ("@triplescosmos", "tripleS(트리플에스) 'Andless’ Official MV", ("triples", "kr")),
         ("@triplescosmos", "tripleS(트리플에스) '깨어' (Are You Alive) Official MV", ("triples", "kr")),
         ("@triplescosmos", "tripleS 'Baby Flower' Japanese Ver. Official MV", ("triples", "jp")),
-        ("@triplescosmos", "tripleS(トリプルエス) ∞! ‘Password’ Official MV", None),
-        ("@triplescosmos", "tripleS(트리플에스) Visionary Vision ‘Hit the Floor’ Official MV", None),
+        ("@triplescosmos", "트리플에스(tripleS) 'Rising' MV", ("triples", "kr")),
+        ("@triplescosmos", "tripleS(トリプルエス) ∞! ‘Password’ Official MV", ("triples-infinity", "jp")),
+        ("@triplescosmos", "tripleS(트리플에스) Visionary Vision ‘Hit the Floor’ Official MV", ("triples-vv", "kr")),
+        ("@triplescosmos", "tripleS(트리플에스) msnz moon 'Cameo Love' Official MV", ("triples-msnz-moon", "kr")),
+        ("@triplescosmos", "tripleS(트리플에스) msnz zenith ‘Q&A’ Official MV", ("triples-msnz-zenith", "kr")),
+        ("@triplescosmos", "tripleS(트리플에스) msnz zenith ‘Q&A’ Official Performance Video", None),
+        ("@triplescosmos", "트리플에스(tripleS AAA) ‘Generation’ MV", ("triples-aaa", "kr")),
+        ("@triplescosmos", "tripleS AAA Generation : M/V Ver.", None),
+        ("@triplescosmos", "트리플에스(tripleS +(KR)ystal Eyes) ‘Cherry Talk’ MV", ("triples-kre", "kr")),
+        ("@triplescosmos", "tripleS(트리플에스) +(KR)ystal Eyes ‘Touch+’ MV", ("triples-kre", "kr")),
+        ("@triplescosmos", "tripleS(트리플에스) LOVElution ‘Girls' Capitalism’ MV", ("triples-lovelution", "kr")),
+        ("@triplescosmos", "tripleS(트리플에스) EVOLution ‘Invincible’ MV", ("triples-evolution", "kr")),
+        ("@triplescosmos", "tripleS(트리플에스) Aria ‘Door’ MV", ("triples-aria", "kr")),
+        ("@triplescosmos", "tripleS Glow (트리플에스) '내적 댄스 (Inner Dance)' Official Performance", None),
     ],
 )
 def test_real_channel_titles(handle, title, expected):
@@ -52,6 +64,14 @@ def test_real_channel_titles(handle, title, expected):
     page = {"items": [{"snippet": {"title": title, "resourceId": {"videoId": "x" * 11}}}]}
     match = match_music_videos([page], _artists_on(handle), market).get("x" * 11)
     assert (None if match is None else (match["artist"], match["market"])) == expected
+
+
+def test_listed_video_ids_match_even_when_the_title_does_not():
+    title = 'TWICE Pre-release english track "MOONLIGHT SUNRISE" M/V'
+    page = {"items": [{"snippet": {"title": title, "resourceId": {"videoId": "cKlEE_EYuNM"}}},
+                      {"snippet": {"title": title + " Teaser 1", "resourceId": {"videoId": "2P997RmZRU4"}}}]}
+    matches = match_music_videos([page], _artists_on("@JYPEntertainment"), "kr")
+    assert matches == {"cKlEE_EYuNM": {"artist": "twice", "market": "kr"}}
 
 
 def test_records_cast_counters_and_keep_hidden_likes_as_null(fixture):

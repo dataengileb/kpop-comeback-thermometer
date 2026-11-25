@@ -55,9 +55,11 @@ def lambda_handler(event, context):
     day = snapshot_date(event)
     key = get_secret(os.environ["LASTFM_KEY_PARAM"])
     artists, tracks = [], []
-    for artist in load_artists():
-        info = _call("artist.getinfo", artist["name"], key)
-        top = _call("artist.gettoptracks", artist["name"], key, limit=50)
+    # Units with generic names (Aria, Sun, Moon...) have lastfm_name null: Last.fm would
+    # return a different artist with the same name.
+    for artist in (a for a in load_artists() if a["lastfm_name"]):
+        info = _call("artist.getinfo", artist["lastfm_name"], key)
+        top = _call("artist.gettoptracks", artist["lastfm_name"], key, limit=50)
         storage.put_json(storage.raw_key("lastfm", day, f"artist_{artist['slug']}"), info)
         storage.put_json(storage.raw_key("lastfm", day, f"toptracks_{artist['slug']}"), top)
         artists.append(artist_record(info, artist["slug"], day))
