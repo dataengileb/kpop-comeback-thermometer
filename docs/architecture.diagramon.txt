@@ -1,17 +1,18 @@
 # Comeback Thermometer architecture in Diagramon text format (https://github.com/dataengileb/diagramon).
-# Readable source; docs/architecture.diagramon.json is the same diagram with its layout: open it in Diagramon
-# and use Export > PNG to refresh docs/architecture.png. Truth: infra/template.yaml. Dashed and grey = planned.
+# Readable source; docs/architecture.diagramon.json is the same diagram with its layout: open it in Diagramon,
+# pick the dark theme and the Neon palette, and use Export > PNG to refresh docs/architecture.png.
+# Truth: infra/template.yaml. Dashed and grey = planned (phase 3).
 
 title: Comeback Thermometer
 direction: LR
 lines: elbow
-version: phase 1 of 3
+version: phase 2 of 3
 
 phase p1: "Phase 1 · ingestion"
-phase p2: "Phase 2 · Athena gold"
+phase p2: "Phase 2 · gold in Athena"
 phase p3: "Phase 3 · static site"
 
-type planned: "Planned" dash="6 4" color=#9aa0a6 width=2 particles=0
+type planned: "Planned" dash="6 4" color=#8b93a1 width=2 particles=0
 
 group ext "External APIs" color=lavender {
   yt: YouTube Data API v3 [web] "API key"
@@ -21,7 +22,7 @@ group ext "External APIs" color=lavender {
 
 group aws "AWS account · free tier" color=peach {
   sched: EventBridge Scheduler [aws/eventbridge] "daily 07:00 Mexico City"
-  sfn: Step Functions [aws/stepfunctions] "JSONata · Parallel"
+  sfn: Step Functions [aws/stepfunctions] "JSONata · ingest, then gold"
   group ingest "Ingestion Lambdas · Python stdlib" color=sky {
     fyt: ingest_youtube [aws/lambda]
     flfm: ingest_lastfm [aws/lambda]
@@ -29,12 +30,14 @@ group aws "AWS account · free tier" color=peach {
   }
   ssm: SSM Parameter Store [aws/systemsmanager] "API keys · SecureString"
   s3: S3 data bucket [aws/s3] "raw · validated · quarantine"
-  sns: SNS alert topic [aws/sns] "on failure"
+  athena: Athena workgroup [aws/athena] "MERGE · checks · VACUUM" phase=p2
+  glue: Glue Data Catalog [aws/glue] "silver tables · projection" phase=p2
+  gold: Gold Iceberg tables [aws/s3] "mv_launch · artist_daily" phase=p2
+  sns: SNS alert topic [aws/sns] "failed run or check"
   budget: AWS Budgets [email] "alert on the first cent"
-  athena: Athena gold [aws/athena] "Iceberg tables · planned" phase=p2
 }
 
-group site "No AWS connection · planned" color=#e6e8ea phase=p3 {
+group site "No AWS connection · planned" color=#8b93a1 phase=p3 {
   export: Dated export [storage] "site/data/"
   pages: GitHub Pages [web] "static site"
 }
@@ -53,9 +56,12 @@ fmb -> mb : HTTPS
 fyt => s3
 flfm => s3
 fmb => s3
+sfn -> athena : queries phase=p2
+athena -> glue : catalog phase=p2
+athena => s3 : read validated/, write athena-results/ phase=p2
+athena => gold : MERGE phase=p2
 sfn ~> sns : Catch
 sns -> mail : email
 budget -> mail : email
-s3 -> athena : validated/ style=planned phase=p2
-athena -> export : query style=planned phase=p3
+gold -> export : query style=planned phase=p3
 export -> pages : git push style=planned phase=p3
