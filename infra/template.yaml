@@ -329,6 +329,71 @@ Resources:
         ResultConfiguration:
           OutputLocation: !Sub s3://${DataBucket}/athena-results/
 
+  # ---------- Site export ----------
+  ExportRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: export
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [athena:StartQueryExecution, athena:GetQueryExecution, athena:GetQueryResults]
+                Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${WorkGroup}
+              - Effect: Allow
+                Action: [glue:GetDatabase, glue:GetTable]
+                Resource:
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${Catalog}
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${Catalog}/gold_*
+              - Effect: Allow
+                Action: [s3:GetBucketLocation, s3:ListBucket]
+                Resource: !GetAtt DataBucket.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  - !Sub ${DataBucket.Arn}/gold/*
+                  - !Sub ${DataBucket.Arn}/athena-results/*
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  - !Sub ${DataBucket.Arn}/athena-results/*
+                  - !Sub ${DataBucket.Arn}/exports/*
+
+  ExportLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-export-site
+      RetentionInDays: 14
+
+  ExportSite:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-export-site
+      Runtime: python3.14
+      Architectures: [arm64]
+      Handler: export_site.handler.lambda_handler
+      Code: ../src
+      Role: !GetAtt ExportRole.Arn
+      MemorySize: 256
+      Timeout: 120
+      LoggingConfig:
+        LogGroup: !Ref ExportLogs
+      Environment:
+        Variables:
+          DATA_BUCKET: !Ref DataBucket
+          ATHENA_WORKGROUP: !Ref WorkGroup
+          ATHENA_DATABASE: !Ref Catalog
+
   # ---------- Orchestration ----------
   PipelineRole:
     Type: AWS::IAM::Role
@@ -350,6 +415,7 @@ Resources:
                   - !GetAtt IngestYouTube.Arn
                   - !GetAtt IngestLastfm.Arn
                   - !GetAtt IngestMusicBrainz.Arn
+                  - !GetAtt ExportSite.Arn
               - Effect: Allow
                 Action: sns:Publish
                 Resource: !Ref AlertTopic
@@ -387,6 +453,7 @@ Resources:
         YouTubeFn: !GetAtt IngestYouTube.Arn
         LastfmFn: !GetAtt IngestLastfm.Arn
         MusicBrainzFn: !GetAtt IngestMusicBrainz.Arn
+        ExportFn: !GetAtt ExportSite.Arn
         AlertTopic: !Ref AlertTopic
         Database: !Ref Catalog
         WorkGroup: !Ref WorkGroup
@@ -394,7 +461,8 @@ Resources:
         Comment: >-
           Daily snapshot. A re-run on the same UTC day overwrites that day; past days cannot be re-taken.
           Each source catches its own failure, so one broken API never cancels the other two.
-          Then the gold tables are rebuilt with MERGE and checked; any failure emails the alert.
+          Then the gold tables are rebuilt with MERGE and checked, and the site export is written.
+          Any failure emails the alert.
         QueryLanguage: JSONata
         StartAt: Ingest
         States:
@@ -674,6 +742,24 @@ Resources:
               WorkGroup: "${WorkGroup}"
               QueryExecutionContext: {Database: "${Database}"}
               QueryString: VACUUM gold_artist_daily
+            Next: ExportSite
+          ExportSite:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Arguments:
+              FunctionName: "${ExportFn}"
+              Payload:
+                snapshot_date: "{% $substring($states.context.Execution.StartTime, 0, 10) %}"
+            Output: "{% $states.result.Payload %}"
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.TooManyRequestsException, States.Timeout]
+                IntervalSeconds: 30
+                MaxAttempts: 2
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                Next: NotifyFailure
+                Output: "{% $states.errorOutput %}"
             Next: Done
           NotifyFailure:
             Type: Task

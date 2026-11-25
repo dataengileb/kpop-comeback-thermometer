@@ -60,8 +60,8 @@ def lambda_handler(event, context):
     day = snapshot_date(event)
     key = get_secret(os.environ["LASTFM_KEY_PARAM"])
     artists, tracks, not_found = [], [], []
-    # Units with generic names (Aria, Sun, Moon...) have lastfm_name null: Last.fm would
-    # return a different artist with the same name.
+    # lastfm_name is null where Last.fm has no reliable page: tripleS's units are credited to
+    # tripleS or split across spellings, and names like Aria or Sun belong to other artists.
     for artist in (a for a in load_artists() if a["lastfm_name"]):
         info = _call("artist.getinfo", artist["lastfm_name"], key)
         if info is None:

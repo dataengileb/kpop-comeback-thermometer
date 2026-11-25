@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comeback Thermometer</title>
+  <meta name="description" content="How strong was the start of each TWICE, NMIXX and tripleS comeback, compared with the artist's previous ones?">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="title-row">
+        <h1 data-i18n="title">Comeback Thermometer</h1>
+        <button id="lang" type="button" class="lang" aria-label="Español">ES</button>
+      </div>
+      <p class="question" data-i18n="question"></p>
+      <p class="asof"><span data-i18n="asof"></span> <strong id="snapshot-date">…</strong></p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="controls" aria-label="Filters">
+      <label>
+        <span data-i18n="artist"></span>
+        <select id="artist"></select>
+      </label>
+      <div class="market" role="radiogroup" aria-labelledby="market-label">
+        <span id="market-label" data-i18n="market"></span>
+        <button type="button" role="radio" data-market="kr" aria-checked="true" data-i18n="kr"></button>
+        <button type="button" role="radio" data-market="jp" aria-checked="false" data-i18n="jp"></button>
+      </div>
+    </section>
+
+    <section aria-labelledby="ranked-title">
+      <h2 id="ranked-title" data-i18n="ranked_title"></h2>
+      <p class="note" id="ranked-note"></p>
+      <div class="table-wrap">
+        <table id="ranked">
+          <thead>
+            <tr>
+              <th scope="col" data-i18n="col_mv"></th>
+              <th scope="col" data-i18n="col_released"></th>
+              <th scope="col" class="num" data-i18n="col_d1"></th>
+              <th scope="col" class="num" data-i18n="col_d7"></th>
+              <th scope="col" class="num" data-i18n="col_d28"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="earlier-title">
+      <h2 id="earlier-title" data-i18n="earlier_title"></h2>
+      <p class="note" data-i18n="earlier_note"></p>
+      <div class="table-wrap">
+        <table id="earlier">
+          <thead>
+            <tr>
+              <th scope="col" data-i18n="col_mv"></th>
+              <th scope="col" data-i18n="col_released"></th>
+              <th scope="col" class="num" data-i18n="col_age"></th>
+              <th scope="col" class="num" data-i18n="col_views"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="lastfm-title" id="lastfm-section">
+      <h2 id="lastfm-title" data-i18n="lastfm_title"></h2>
+      <dl class="stats" id="lastfm"></dl>
+    </section>
+
+    <section aria-labelledby="scope-title" class="scope">
+      <h2 id="scope-title" data-i18n="scope_title"></h2>
+      <ul id="scope"></ul>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p data-i18n="footer_data"></p>
+    <p>
+      <a href="https://github.com/dataengileb/kpop-comeback-thermometer" data-i18n="footer_repo"></a> ·
+      <span data-i18n="footer_sources"></span>
+      <a href="https://developers.google.com/youtube/v3">YouTube Data API</a>,
+      <a href="https://www.last.fm/api">Last.fm</a>,
+      <a href="https://musicbrainz.org/">MusicBrainz</a>
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
