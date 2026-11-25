@@ -8,11 +8,11 @@
 
 ## Cómo funciona
 
-1. Todos los días a las 07:00, hora de la Ciudad de México, Step Functions corre tres Lambdas que guardan en S3 una foto de YouTube, Last.fm y MusicBrainz. Las respuestas crudas se conservan. Los registros que rompen un [contrato](src/contracts) van a cuarentena, y si más del 5% lo rompe, la corrida se detiene.
+1. Todos los días a las 07:00, hora de la Ciudad de México, Step Functions corre tres Lambdas que guardan en S3 una foto de YouTube, Last.fm y MusicBrainz. Las respuestas crudas quedan intactas en bronze. Los registros que cumplen su [contrato](src/contracts) van a silver y el resto a cuarentena, y si más del 5% lo rompe, la corrida se detiene.
 2. Athena reconstruye dos tablas gold Iceberg con `MERGE` y corre pruebas de datos ([ADR 4](docs/adr/0004-gold-iceberg-tables-rebuilt-with-merge.md)).
 3. Una Lambda exporta gold a un archivo JSON fechado, que es lo que lee el sitio estático. El sitio nunca se conecta a AWS.
 
-![Arquitectura: EventBridge Scheduler inicia Step Functions cada día. Corre tres Lambdas de ingesta en paralelo, que leen las llaves de API de SSM, consultan YouTube, Last.fm y MusicBrainz, y escriben en S3. Después Athena hace MERGE de los datos validados en dos tablas Iceberg gold a través del catálogo de Glue, las revisa y las compacta con VACUUM. La Lambda export_site lee gold y escribe en S3 un corte fechado en JSON; fetch_export.sh lo copia a site/data/ y publish_site.sh publica el sitio en GitHub Pages, que nunca llama a AWS. Las fallas de la corrida o de las revisiones llegan por correo vía SNS, y AWS Budgets avisa desde el primer centavo.](docs/architecture.png)
+![Arquitectura: EventBridge Scheduler inicia Step Functions cada día. Corre tres Lambdas de ingesta en paralelo, que leen las llaves de API de SSM, consultan YouTube, Last.fm y MusicBrainz, y escriben en S3. Después Athena hace MERGE de silver en dos tablas Iceberg gold a través del catálogo de Glue, las revisa y las compacta con VACUUM. La Lambda export_site lee gold y escribe en S3 un corte fechado en JSON; fetch_export.sh lo copia a site/data/ y publish_site.sh publica el sitio en GitHub Pages, que nunca llama a AWS. Las fallas de la corrida o de las revisiones llegan por correo vía SNS, y AWS Budgets avisa desde el primer centavo.](docs/architecture.png)
 
 Dibujado con [Diagramon](https://github.com/dataengileb/diagramon) a partir de [su fuente](docs/architecture.diagramon.txt). El cian marca el flujo principal de datos y el rosa, las alertas.
 

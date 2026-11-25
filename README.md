@@ -8,11 +8,11 @@ How strong is each new TWICE, NMIXX or tripleS launch at day 1, 7 and 28, compar
 
 ## How it works
 
-1. Every day at 07:00 Mexico City time, Step Functions runs three Lambdas that snapshot YouTube, Last.fm and MusicBrainz into S3. Raw responses are kept. Records that break a [contract](src/contracts) go to quarantine, and if more than 5% break it, the run stops.
+1. Every day at 07:00 Mexico City time, Step Functions runs three Lambdas that snapshot YouTube, Last.fm and MusicBrainz into S3. Raw responses land untouched in bronze. Records that pass their [contract](src/contracts) go to silver and the rest to quarantine, and if more than 5% break it, the run stops.
 2. Athena rebuilds two Iceberg gold tables with `MERGE` and runs data checks ([ADR 4](docs/adr/0004-gold-iceberg-tables-rebuilt-with-merge.md)).
 3. A Lambda exports gold to a dated JSON file, which the static site reads. The site never calls AWS.
 
-![Architecture: EventBridge Scheduler starts Step Functions daily. It runs three ingestion Lambdas in parallel, which read API keys from SSM, pull from YouTube, Last.fm and MusicBrainz, and write to S3. Athena then MERGEs the validated data into two gold Iceberg tables through the Glue catalog, checks them and vacuums them. The export_site Lambda reads gold and writes a dated JSON export to S3; fetch_export.sh copies it into site/data/ and publish_site.sh pushes the site to GitHub Pages, which never calls AWS. Failed runs or checks go to SNS email, and AWS Budgets alerts on the first cent.](docs/architecture.png)
+![Architecture: EventBridge Scheduler starts Step Functions daily. It runs three ingestion Lambdas in parallel, which read API keys from SSM, pull from YouTube, Last.fm and MusicBrainz, and write to S3. Athena then MERGEs silver into two gold Iceberg tables through the Glue catalog, checks them and vacuums them. The export_site Lambda reads gold and writes a dated JSON export to S3; fetch_export.sh copies it into site/data/ and publish_site.sh pushes the site to GitHub Pages, which never calls AWS. Failed runs or checks go to SNS email, and AWS Budgets alerts on the first cent.](docs/architecture.png)
 
 Drawn with [Diagramon](https://github.com/dataengileb/diagramon) from [its source](docs/architecture.diagramon.txt). Cyan marks the main data flow, pink the alerts.
 
