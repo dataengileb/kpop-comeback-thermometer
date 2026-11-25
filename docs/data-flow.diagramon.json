@@ -1,0 +1,258 @@
+{
+  "formatVersion": 1,
+  "title": "Comeback Thermometer · data flow",
+  "direction": "LR",
+  "routing": "elbow",
+  "docId": "d-e17c421696d0b4d0",
+  "edgeTypes": [
+    {
+      "id": "flow",
+      "label": "Data that moves on",
+      "color": "#00E5FF",
+      "width": 3,
+      "particles": 2
+    },
+    {
+      "id": "reject",
+      "label": "Rejected records",
+      "dash": "6 4",
+      "color": "#FF4FB0",
+      "width": 2,
+      "particles": 1
+    }
+  ],
+  "meta": {
+    "version": "phase 3 of 3"
+  },
+  "groups": [
+    {
+      "id": "ext",
+      "label": "External APIs",
+      "color": "#C9B8FF"
+    },
+    {
+      "id": "bucket",
+      "label": "S3 data bucket · one folder per snapshot_date",
+      "color": "#FFC9A8"
+    },
+    {
+      "id": "site",
+      "label": "Static site · never calls AWS",
+      "color": "#B5F2D0"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "yt",
+      "label": "YouTube Data API v3",
+      "type": "web",
+      "sub": "video counters",
+      "group": "ext",
+      "x": 0,
+      "y": 40
+    },
+    {
+      "id": "lfm",
+      "label": "Last.fm API",
+      "type": "web",
+      "sub": "artist and track plays",
+      "group": "ext",
+      "x": 0,
+      "y": 200
+    },
+    {
+      "id": "mb",
+      "label": "MusicBrainz API",
+      "type": "web",
+      "sub": "release groups",
+      "group": "ext",
+      "x": 0,
+      "y": 360
+    },
+    {
+      "id": "ingest",
+      "label": "Ingestion Lambdas",
+      "type": "function",
+      "icon": "aws/lambda",
+      "sub": "check the data contracts",
+      "x": 320,
+      "y": 200
+    },
+    {
+      "id": "raw",
+      "label": "raw/",
+      "type": "storage",
+      "icon": "aws/s3",
+      "sub": "API responses, untouched",
+      "group": "bucket",
+      "x": 640,
+      "y": 40,
+      "layer": "bronze"
+    },
+    {
+      "id": "validated",
+      "label": "validated/",
+      "type": "storage",
+      "icon": "aws/s3",
+      "sub": "passed the contract",
+      "group": "bucket",
+      "x": 640,
+      "y": 200,
+      "layer": "silver"
+    },
+    {
+      "id": "quarantine",
+      "label": "quarantine/",
+      "type": "storage",
+      "icon": "aws/s3",
+      "sub": "failed, with the reasons",
+      "group": "bucket",
+      "x": 640,
+      "y": 360
+    },
+    {
+      "id": "gold",
+      "label": "gold/ · Iceberg",
+      "type": "storage",
+      "icon": "aws/s3",
+      "sub": "video_launch · artist_daily",
+      "group": "bucket",
+      "x": 640,
+      "y": 520,
+      "layer": "gold"
+    },
+    {
+      "id": "exports",
+      "label": "exports/",
+      "type": "storage",
+      "icon": "aws/s3",
+      "sub": "dated site.json + latest",
+      "group": "bucket",
+      "x": 640,
+      "y": 720
+    },
+    {
+      "id": "silver",
+      "label": "Silver tables",
+      "type": "analytics",
+      "icon": "aws/glue",
+      "sub": "YouTube · Last.fm",
+      "x": 960,
+      "y": 200,
+      "layer": "silver"
+    },
+    {
+      "id": "export",
+      "label": "export_site",
+      "type": "function",
+      "icon": "aws/lambda",
+      "sub": "after the gold checks pass",
+      "x": 960,
+      "y": 620
+    },
+    {
+      "id": "repo",
+      "label": "site/data/",
+      "type": "storage",
+      "sub": "latest.json + dated copy",
+      "group": "site",
+      "x": 1280,
+      "y": 720
+    },
+    {
+      "id": "pages",
+      "label": "GitHub Pages",
+      "type": "web",
+      "sub": "charts and comparisons",
+      "group": "site",
+      "x": 1600,
+      "y": 720
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "yt",
+      "to": "ingest",
+      "label": "HTTPS",
+      "style": "flow"
+    },
+    {
+      "id": "e2",
+      "from": "lfm",
+      "to": "ingest",
+      "label": "HTTPS",
+      "style": "flow"
+    },
+    {
+      "id": "e3",
+      "from": "mb",
+      "to": "ingest",
+      "label": "HTTPS",
+      "style": "flow"
+    },
+    {
+      "id": "e4",
+      "from": "ingest",
+      "to": "raw",
+      "label": "as returned",
+      "style": "flow"
+    },
+    {
+      "id": "e5",
+      "from": "ingest",
+      "to": "validated",
+      "label": "passes",
+      "style": "flow"
+    },
+    {
+      "id": "e6",
+      "from": "ingest",
+      "to": "quarantine",
+      "label": "fails · over 5% stops the run",
+      "style": "reject"
+    },
+    {
+      "id": "e7",
+      "from": "validated",
+      "to": "silver",
+      "label": "Glue catalog",
+      "style": "flow"
+    },
+    {
+      "id": "e8",
+      "from": "silver",
+      "to": "gold",
+      "label": "Athena MERGE",
+      "style": "flow"
+    },
+    {
+      "id": "e9",
+      "from": "gold",
+      "to": "export",
+      "label": "SELECT",
+      "style": "flow"
+    },
+    {
+      "id": "e10",
+      "from": "export",
+      "to": "exports",
+      "label": "JSON",
+      "style": "flow"
+    },
+    {
+      "id": "e11",
+      "from": "exports",
+      "to": "repo",
+      "label": "fetch_export.sh",
+      "style": "flow"
+    },
+    {
+      "id": "e12",
+      "from": "repo",
+      "to": "pages",
+      "label": "publish_site.sh",
+      "style": "flow"
+    }
+  ]
+}

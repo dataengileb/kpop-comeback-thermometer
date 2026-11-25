@@ -1,0 +1,64 @@
+# Comeback Thermometer daily run in Diagramon text format (https://github.com/dataengileb/diagramon).
+# The steps of the Step Functions state machine Pipeline, in order, with the failure path. For whoever
+# operates the pipeline or reads a failed execution. The services behind each step are in docs/architecture.diagramon.txt.
+# Readable source; docs/pipeline.diagramon.json holds the layout: open it in Diagramon and use
+# Export > PNG to refresh docs/pipeline.png. Truth: the Pipeline resource in infra/template.yaml.
+# Same "Neon on Black" colors as docs/architecture.diagramon.txt.
+#
+# Every Task catches its errors and goes to NotifyFailure. Only the two Choice states are drawn with
+# their own arrow to it; the box around the Tasks says the rest.
+
+title: Comeback Thermometer · daily run
+direction: LR
+lines: elbow
+version: phase 3 of 3
+
+type step: "Next step" color=#00E5FF width=3 particles=2
+type fail: "Failure path" dash="6 4" color=#FF4FB0 width=2 particles=1
+
+sched: EventBridge Scheduler [aws/eventbridge] "daily 07:00 Mexico City"
+
+group sm "State machine Pipeline · any error in a step goes to NotifyFailure" color=#FFE9A8 {
+  group ingest "Ingest · Parallel · a failed source is marked, the others go on" color=#A8D8FF {
+    youtube: YouTube [aws/lambda] "Task · retry ×2"
+    lastfm: Lastfm [aws/lambda] "Task · retry ×2"
+    musicbrainz: MusicBrainz [aws/lambda] "Task · retry ×2"
+  }
+  checksources: CheckSources [gateway] "Choice · did a source fail?"
+  group build "Rebuild gold · Athena" color=#C9B8FF {
+    buildvideo: BuildVideoLaunch [aws/athena] "MERGE gold_video_launch"
+    buildartist: BuildArtistDaily [aws/athena] "MERGE gold_artist_daily"
+  }
+  group checks "Check gold · Athena" color=#C9B8FF {
+    checkgold: CheckGold [aws/athena] "run the data checks"
+    readchecks: ReadChecks [aws/athena] "read the failures"
+    checkspassed: ChecksPassed [gateway] "Choice · any failure?"
+  }
+  group vacuum "Expire old snapshots · Athena" color=#C9B8FF {
+    vacuumvideo: VacuumVideoLaunch [aws/athena] "VACUUM"
+    vacuumartist: VacuumArtistDaily [aws/athena] "VACUUM"
+  }
+  exportsite: ExportSite [aws/lambda] "export_site · retry ×2"
+  done: Done [monitor] "Succeed"
+  notify: NotifyFailure [aws/sns] "SNS publish · email"
+  failed: Failed [monitor] "Fail"
+}
+
+sched -> youtube : StartExecution style=step
+sched -> lastfm : style=step
+sched -> musicbrainz : style=step
+youtube -> checksources : style=step
+lastfm -> checksources : style=step
+musicbrainz -> checksources : style=step
+checksources -> buildvideo : all sources ok style=step
+buildvideo -> buildartist : style=step
+buildartist -> checkgold : style=step
+checkgold -> readchecks : style=step
+readchecks -> checkspassed : style=step
+checkspassed -> vacuumvideo : no failures style=step
+vacuumvideo -> vacuumartist : style=step
+vacuumartist -> exportsite : style=step
+exportsite -> done : style=step
+checksources -> notify : a source failed style=fail
+checkspassed -> notify : a check failed style=fail
+notify -> failed : style=fail

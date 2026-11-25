@@ -1,0 +1,330 @@
+{
+  "formatVersion": 1,
+  "title": "Comeback Thermometer · daily run",
+  "direction": "LR",
+  "routing": "elbow",
+  "docId": "d-518707eea5a8c621",
+  "edgeTypes": [
+    {
+      "id": "step",
+      "label": "Next step",
+      "color": "#00E5FF",
+      "width": 3,
+      "particles": 2
+    },
+    {
+      "id": "fail",
+      "label": "Failure path",
+      "dash": "6 4",
+      "color": "#FF4FB0",
+      "width": 2,
+      "particles": 1
+    }
+  ],
+  "meta": {
+    "version": "phase 3 of 3"
+  },
+  "groups": [
+    {
+      "id": "sm",
+      "label": "State machine Pipeline · any error in a step goes to NotifyFailure",
+      "color": "#FFE9A8"
+    },
+    {
+      "id": "ingest",
+      "label": "Ingest · Parallel · a failed source is marked, the others go on",
+      "color": "#A8D8FF",
+      "parent": "sm"
+    },
+    {
+      "id": "build",
+      "label": "Rebuild gold · Athena",
+      "color": "#C9B8FF",
+      "parent": "sm"
+    },
+    {
+      "id": "checks",
+      "label": "Check gold · Athena",
+      "color": "#C9B8FF",
+      "parent": "sm"
+    },
+    {
+      "id": "vacuum",
+      "label": "Expire old snapshots · Athena",
+      "color": "#C9B8FF",
+      "parent": "sm"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "sched",
+      "label": "EventBridge Scheduler",
+      "type": "events",
+      "icon": "aws/eventbridge",
+      "sub": "daily 07:00 Mexico City",
+      "x": 0,
+      "y": 200
+    },
+    {
+      "id": "youtube",
+      "label": "YouTube",
+      "type": "function",
+      "icon": "aws/lambda",
+      "sub": "Task · retry ×2",
+      "group": "ingest",
+      "x": 320,
+      "y": 80
+    },
+    {
+      "id": "lastfm",
+      "label": "Lastfm",
+      "type": "function",
+      "icon": "aws/lambda",
+      "sub": "Task · retry ×2",
+      "group": "ingest",
+      "x": 320,
+      "y": 200
+    },
+    {
+      "id": "musicbrainz",
+      "label": "MusicBrainz",
+      "type": "function",
+      "icon": "aws/lambda",
+      "sub": "Task · retry ×2",
+      "group": "ingest",
+      "x": 320,
+      "y": 320
+    },
+    {
+      "id": "checksources",
+      "label": "CheckSources",
+      "type": "gateway",
+      "sub": "Choice · did a source fail?",
+      "group": "sm",
+      "x": 640,
+      "y": 200
+    },
+    {
+      "id": "buildvideo",
+      "label": "BuildVideoLaunch",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "MERGE gold_video_launch",
+      "group": "build",
+      "x": 960,
+      "y": 140
+    },
+    {
+      "id": "buildartist",
+      "label": "BuildArtistDaily",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "MERGE gold_artist_daily",
+      "group": "build",
+      "x": 960,
+      "y": 260
+    },
+    {
+      "id": "checkgold",
+      "label": "CheckGold",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "run the data checks",
+      "group": "checks",
+      "x": 1280,
+      "y": 80
+    },
+    {
+      "id": "readchecks",
+      "label": "ReadChecks",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "read the failures",
+      "group": "checks",
+      "x": 1280,
+      "y": 200
+    },
+    {
+      "id": "checkspassed",
+      "label": "ChecksPassed",
+      "type": "gateway",
+      "sub": "Choice · any failure?",
+      "group": "checks",
+      "x": 1280,
+      "y": 320
+    },
+    {
+      "id": "vacuumvideo",
+      "label": "VacuumVideoLaunch",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "VACUUM",
+      "group": "vacuum",
+      "x": 1600,
+      "y": 140
+    },
+    {
+      "id": "vacuumartist",
+      "label": "VacuumArtistDaily",
+      "type": "analytics",
+      "icon": "aws/athena",
+      "sub": "VACUUM",
+      "group": "vacuum",
+      "x": 1600,
+      "y": 260
+    },
+    {
+      "id": "exportsite",
+      "label": "ExportSite",
+      "type": "function",
+      "icon": "aws/lambda",
+      "sub": "export_site · retry ×2",
+      "group": "sm",
+      "x": 1920,
+      "y": 200
+    },
+    {
+      "id": "done",
+      "label": "Done",
+      "type": "monitor",
+      "sub": "Succeed",
+      "group": "sm",
+      "x": 2240,
+      "y": 200
+    },
+    {
+      "id": "notify",
+      "label": "NotifyFailure",
+      "type": "events",
+      "icon": "aws/sns",
+      "sub": "SNS publish · email",
+      "group": "sm",
+      "x": 960,
+      "y": 520
+    },
+    {
+      "id": "failed",
+      "label": "Failed",
+      "type": "monitor",
+      "sub": "Fail",
+      "group": "sm",
+      "x": 1280,
+      "y": 520
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "sched",
+      "to": "youtube",
+      "label": "StartExecution",
+      "style": "step"
+    },
+    {
+      "id": "e2",
+      "from": "sched",
+      "to": "lastfm",
+      "style": "step"
+    },
+    {
+      "id": "e3",
+      "from": "sched",
+      "to": "musicbrainz",
+      "style": "step"
+    },
+    {
+      "id": "e4",
+      "from": "youtube",
+      "to": "checksources",
+      "style": "step"
+    },
+    {
+      "id": "e5",
+      "from": "lastfm",
+      "to": "checksources",
+      "style": "step"
+    },
+    {
+      "id": "e6",
+      "from": "musicbrainz",
+      "to": "checksources",
+      "style": "step"
+    },
+    {
+      "id": "e7",
+      "from": "checksources",
+      "to": "buildvideo",
+      "label": "all sources ok",
+      "style": "step"
+    },
+    {
+      "id": "e8",
+      "from": "buildvideo",
+      "to": "buildartist",
+      "style": "step"
+    },
+    {
+      "id": "e9",
+      "from": "buildartist",
+      "to": "checkgold",
+      "style": "step"
+    },
+    {
+      "id": "e10",
+      "from": "checkgold",
+      "to": "readchecks",
+      "style": "step"
+    },
+    {
+      "id": "e11",
+      "from": "readchecks",
+      "to": "checkspassed",
+      "style": "step"
+    },
+    {
+      "id": "e12",
+      "from": "checkspassed",
+      "to": "vacuumvideo",
+      "label": "no failures",
+      "style": "step"
+    },
+    {
+      "id": "e13",
+      "from": "vacuumvideo",
+      "to": "vacuumartist",
+      "style": "step"
+    },
+    {
+      "id": "e14",
+      "from": "vacuumartist",
+      "to": "exportsite",
+      "style": "step"
+    },
+    {
+      "id": "e15",
+      "from": "exportsite",
+      "to": "done",
+      "style": "step"
+    },
+    {
+      "id": "e16",
+      "from": "checksources",
+      "to": "notify",
+      "label": "a source failed",
+      "style": "fail"
+    },
+    {
+      "id": "e17",
+      "from": "checkspassed",
+      "to": "notify",
+      "label": "a check failed",
+      "style": "fail"
+    },
+    {
+      "id": "e18",
+      "from": "notify",
+      "to": "failed",
+      "style": "fail"
+    }
+  ]
+}
