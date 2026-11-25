@@ -4,7 +4,7 @@
 
 ¿Qué tan fuerte arrancó cada comeback de TWICE, NMIXX y tripleS, sus unidades y solistas, comparado con los anteriores del mismo artista? YouTube solo muestra totales históricos, que siempre favorecen a los éxitos viejos. Este proyecto toma una foto diaria de los contadores para medir un lanzamiento al día 1, 7 y 28.
 
-**Sitio:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/?lang=es) · **Alcance:** [RFP](docs/rfp.md) y [SOW](docs/sow.md) · **Artistas y canales:** [`artists.json`](src/config/artists.json)
+**Sitio:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/?lang=es) · **Alcance:** [RFP](docs/rfp.md) y [SOW](docs/sow.md) · **Artistas y canales:** [`artists.json`](src/config/artists.json) · **Agregar artistas o métricas:** [extending.md](docs/extending.md)
 
 ## Cómo funciona
 
