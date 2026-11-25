@@ -37,6 +37,6 @@ unset KEY
 ALERT_EMAIL=tu@correo.com ./scripts/deploy.sh
 ```
 
-Confirma el correo de SNS. La primera corrida ocurre a las 07:00 siguientes, o lánzala a mano con `aws stepfunctions start-execution --state-machine-arn <PipelineArn>`. Para actualizar el sitio, corre `./scripts/fetch_export.sh`, haz commit de `site/data/` y luego corre `./scripts/publish_site.sh`.
+Confirma el correo de SNS. La primera corrida ocurre a las 07:00 siguientes, o lánzala a mano con `aws stepfunctions start-execution --state-machine-arn <PipelineArn>`. Para actualizar el sitio, corre `./scripts/fetch_export.sh`, haz commit de `site/data/` y luego corre `./scripts/publish_site.sh`. El sitio se actualiza cada lunes, y a diario durante la primera semana de un lanzamiento, así que su fecha de datos nunca tiene más de una semana.
 
 Pruebas: `pip install -r requirements-dev.txt && pytest && cfn-lint`.

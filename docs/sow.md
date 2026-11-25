@@ -15,7 +15,7 @@ The sources are the three in the RFP's [Data available](rfp.md#data-available). 
 | 3 | Dated export | One command copies the latest export into `site/data/` |
 | 4 | Public site | Every [acceptance criterion](rfp.md#acceptance-criteria) in the RFP holds when the client checks the site |
 | 5 | Handover | The README, ADRs and this SOW let the client's team deploy from scratch |
-| 6 | Executive presentation | Twenty minutes with the client, followed by questions |
+| 6 | Executive presentation | Twenty minutes with the client, followed by questions; the slides go in `docs/presentation.pdf` |
 
 ## 3. Milestones
 | Week | Milestone |
