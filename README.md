@@ -2,37 +2,41 @@
 
 **English** · [Español](README.es.md)
 
-How strong was the start of each TWICE, NMIXX and tripleS comeback, Korean or Japanese, compared with the artist's previous ones? Units (TWICE's MISAMO and tripleS's) and the solo releases of NAYEON, JIHYO, CHAEYOUNG and TZUYU are included. YouTube shows lifetime totals, which always favour old hits. This project snapshots the counters every day so a launch can be judged at day 1, 7 and 28.
+How strong was the start of each comeback by TWICE, NMIXX and tripleS, their units and soloists, compared with the artist's previous ones? YouTube only shows lifetime totals, which always favour old hits. This project snapshots the counters every day, so a launch can be judged at day 1, 7 and 28.
 
-**Site:** coming in phase 3. **Status:** phase 2 of 3: daily ingestion with data contracts and gold tables in Athena ([ADR 4](docs/adr/0004-gold-iceberg-tables-rebuilt-with-merge.md)).
+**Site:** [dataengileb.github.io/kpop-comeback-thermometer](https://dataengileb.github.io/kpop-comeback-thermometer/) · **Scope:** [RFP](docs/rfp.md) and [SOW](docs/sow.md) · **Artists and channels:** [`artists.json`](src/config/artists.json)
 
-## Architecture
+## How it works
+
+1. Every day at 07:00 Mexico City time, Step Functions runs three Lambdas that snapshot YouTube, Last.fm and MusicBrainz into S3. Raw responses are kept. Records that break a [contract](src/contracts) go to quarantine, and if more than 5% break it, the run stops.
+2. Athena rebuilds two Iceberg gold tables with `MERGE` and runs data checks ([ADR 4](docs/adr/0004-gold-iceberg-tables-rebuilt-with-merge.md)).
+3. A Lambda exports gold to a dated JSON file, which the static site reads. The site never calls AWS.
 
 ![Architecture: EventBridge Scheduler starts Step Functions daily. It runs three ingestion Lambdas in parallel, which read API keys from SSM, call YouTube, Last.fm and MusicBrainz, and write to S3. Athena then MERGEs the validated data into two gold Iceberg tables through the Glue catalog, checks them and vacuums them. Failed runs or checks go to SNS email, and AWS Budgets alerts on the first cent. The dated export and the GitHub Pages site are planned.](docs/architecture.png)
 
 Drawn with [Diagramon](https://github.com/dataengileb/diagramon) from [its source](docs/architecture.diagramon.txt); dashed and grey parts (phase 3) are planned.
 
-A modernization of [my 2023 version](https://github.com/Proggleb/youtube_data_engineering_project) (EC2 + RDS + Tableau). Why it changed: [ADR 1](docs/adr/0001-serverless-batch-instead-of-ec2-rds.md). Scope: [RFP](docs/rfp.md) and [SOW](docs/sow.md).
+A modernization of [my 2023 version](https://github.com/Proggleb/youtube_data_engineering_project) (EC2 + RDS + Tableau). Why it changed: [ADR 1](docs/adr/0001-serverless-batch-instead-of-ec2-rds.md).
 
 ## What it is and what it isn't
 
 - It measures attention on YouTube and Last.fm, not sales, chart positions or streams on other platforms.
-- Last.fm users skew toward Western listeners; Korean domestic listening is under-represented.
 - Day-N values exist only for videos released after the first snapshot. Older comebacks are shown but not ranked.
 - Each release is compared only with the same artist's releases for the same market (Korea or Japan): a Japanese MV or a solo debut is not measured against a TWICE title track.
-- Only units and soloists with an official MV on the label channels are covered. Last.fm is skipped for tripleS's units: it credits almost all their plays to tripleS and splits the rest across several spellings of each unit.
+- Last.fm users skew toward Western listeners, and Last.fm is skipped for tripleS's units, whose plays it credits to tripleS.
+- Only artists with an official MV on the channels in `artists.json` are covered.
 
-## Deploy
+## Run it
 
-Requires an AWS free-tier account, the AWS CLI and Python 3.14.
+You need an AWS account, the AWS CLI and Python 3.14. The keys and the stack must be in the same region (`us-east-1` unless you set `AWS_REGION`). Running cost is about USD 0.01 a month, all of it Athena.
 
 ```bash
-read -rs KEY && aws ssm put-parameter --type SecureString --name /comeback-thermometer/youtube-api-key --value "$KEY"
-read -rs KEY && aws ssm put-parameter --type SecureString --name /comeback-thermometer/lastfm-api-key --value "$KEY"
+read -rs KEY && aws ssm put-parameter --region us-east-1 --type SecureString --name /comeback-thermometer/youtube-api-key --value "$KEY"
+read -rs KEY && aws ssm put-parameter --region us-east-1 --type SecureString --name /comeback-thermometer/lastfm-api-key --value "$KEY"
 unset KEY
 ALERT_EMAIL=you@example.com ./scripts/deploy.sh
 ```
 
-Confirm the SNS email, then run once by hand: `aws stepfunctions start-execution --state-machine-arn <PipelineArn>`. Query the results in the Athena console, workgroup `comeback-thermometer`, tables `gold_mv_launch` and `gold_artist_daily`.
+Confirm the SNS email. The first run happens at the next 07:00, or start it by hand with `aws stepfunctions start-execution --state-machine-arn <PipelineArn>`. To refresh the site, run `./scripts/fetch_export.sh`, commit `site/data/`, then run `./scripts/publish_site.sh`.
 
 Tests: `pip install -r requirements-dev.txt && pytest && cfn-lint`.
